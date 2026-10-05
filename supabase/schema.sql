@@ -3,7 +3,7 @@ begin;
 create table if not exists public.rooms (
  id text primary key, code text unique not null, host_player_id text not null,
  status text not null default 'waiting' check(status in ('waiting','playing','finished')),
- max_players integer not null check(max_players in (2,4,6)), dealer_position integer not null default 0,
+ max_players integer not null check(max_players in (2,3,4,6)), dealer_position integer not null default 0,
  round_number integer not null default 1, created_at timestamptz default now(),
  expires_at timestamptz default now() + interval '30 minutes'
 );
@@ -13,6 +13,9 @@ create table if not exists public.players (
 );
 alter table public.players add column if not exists auth_user_id uuid references auth.users(id);
 alter table public.rooms alter column expires_at set default now() + interval '30 minutes';
+alter table public.rooms drop constraint if exists rooms_max_players_check;
+alter table public.rooms add constraint rooms_max_players_check check(max_players in (2,3,4,6));
+alter table public.rooms add column if not exists score_c integer not null default 0 check (score_c >= 0);
 alter table public.rooms add column if not exists score_a integer not null default 0 check (score_a >= 0);
 alter table public.rooms add column if not exists score_b integer not null default 0 check (score_b >= 0);
 alter table public.rooms add column if not exists score_limit integer not null default 30 check (score_limit in (15,30));
@@ -49,7 +52,7 @@ begin
  return jsonb_build_object(
   'room',jsonb_build_object('id',r.id,'code',r.code,'hostPlayerId',r.host_player_id,'status',r.status,
    'maxPlayers',r.max_players,'dealerPosition',r.dealer_position,'roundNumber',r.round_number,'gameType','truco','createdAt',r.created_at,
-   'scores',jsonb_build_array(r.score_a,r.score_b),'scoreLimit',r.score_limit,'scoreVersion',r.score_version),
+   'scores',case when r.max_players = 3 then jsonb_build_array(r.score_a,r.score_b,r.score_c) else jsonb_build_array(r.score_a,r.score_b) end,'scoreLimit',r.score_limit,'scoreVersion',r.score_version),
   'players',coalesce((select jsonb_agg(jsonb_build_object('id',s.id,'roomId',s.room_id,'name',s.name,
    'position',s.position,'connected',s.connected,'createdAt',s.created_at) order by s.position)
    from public.players s where s.room_id = r.id),'[]'::jsonb),
@@ -62,7 +65,7 @@ language plpgsql security definer set search_path = '' as $$
 declare rid text := gen_random_uuid()::text; pid text := gen_random_uuid()::text; c text; state jsonb; attempt integer;
 begin
  if auth.uid() is null then raise exception 'Sesión requerida'; end if;
- if capacity is null or capacity not in (2,4,6) then raise exception 'Cantidad inválida'; end if;
+ if capacity is null or capacity not in (2,3,4,6) then raise exception 'Cantidad inválida'; end if;
  if player_name is null or length(trim(player_name)) not between 1 and 30 then raise exception 'Nombre inválido'; end if;
  for attempt in 1..10 loop
   c := upper(substr(replace(gen_random_uuid()::text,'-',''),1,4));
@@ -117,7 +120,7 @@ begin
   raise exception 'Solo el anfitrión o repartidor puede repartir.';
  end if;
  if expected_round is null or expected_round <> r.round_number then raise exception 'La ronda cambió. Actualizá la mesa.'; end if;
- if r.score_a >= r.score_limit or r.score_b >= r.score_limit then raise exception 'El partido terminó. Cerrá la mesa o corregí el marcador.'; end if;
+ if r.score_a >= r.score_limit or r.score_b >= r.score_limit or (r.max_players = 3 and r.score_c >= r.score_limit) then raise exception 'El partido terminó. Cerrá la mesa o corregí el marcador.'; end if;
  if next_round is null or (next_round and r.status <> 'playing') or (not next_round and r.status <> 'waiting') then
   raise exception 'La partida cambió. Actualizá la mesa.';
  end if;
@@ -152,22 +155,23 @@ begin
  if not found or actor.id <> r.host_player_id then raise exception 'Solo el anfitrión puede anotar puntos.'; end if;
  if expected_version is null or expected_version <> r.score_version then raise exception 'El marcador cambió. Actualizá y reintentá.'; end if;
  if score_limit is not null then
-  if score_limit not in (15,30) or r.status <> 'waiting' or r.score_a <> 0 or r.score_b <> 0 then
+  if score_limit not in (15,30) or r.status <> 'waiting' or r.score_a <> 0 or r.score_b <> 0 or r.score_c <> 0 then
    raise exception 'Elegí 15 o 30 antes de comenzar el partido.';
   end if;
   update public.rooms set score_limit = mazo_score.score_limit,score_version = r.score_version + 1 where id = r.id;
  else
-  if team_index is null or team_index not in (0,1) or points_delta is null or points_delta = 0 or abs(points_delta::bigint) > 30 then
+  if team_index is null or team_index < 0 or team_index > (case when r.max_players = 3 then 2 else 1 end) or points_delta is null or points_delta = 0 or abs(points_delta::bigint) > 30 then
    raise exception 'Puntos inválidos.';
   end if;
-  if points_delta > 0 and (r.score_a >= r.score_limit or r.score_b >= r.score_limit) then
+  if points_delta > 0 and (r.score_a >= r.score_limit or r.score_b >= r.score_limit or (r.max_players = 3 and r.score_c >= r.score_limit)) then
    raise exception 'El partido terminó. Podés corregir restando puntos.';
   end if;
-  current_points := case when team_index = 0 then r.score_a else r.score_b end;
+  current_points := case when team_index = 0 then r.score_a when team_index = 1 then r.score_b else r.score_c end;
   if current_points + points_delta < 0 then raise exception 'El marcador no puede ser negativo.'; end if;
   current_points := least(r.score_limit,current_points + points_delta);
   update public.rooms set score_a = case when team_index = 0 then current_points else r.score_a end,
    score_b = case when team_index = 1 then current_points else r.score_b end,
+   score_c = case when team_index = 2 then current_points else r.score_c end,
    score_version = r.score_version + 1 where id = r.id;
  end if;
 end $$;

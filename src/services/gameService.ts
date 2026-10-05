@@ -75,7 +75,7 @@ function saveLocalState(roomCode: string, state: LocalRoomState) {
 }
 
 export class GameService {
-  static async updateScore(roomCode: string, team: 0 | 1, delta: number, expectedVersion: number, limit?: 15 | 30): Promise<void> {
+  static async updateScore(roomCode: string, team: 0 | 1 | 2, delta: number, expectedVersion: number, limit?: 15 | 30): Promise<void> {
     if (isSupabaseConfigured) {
       await gameRpc('mazo_score', { room_code: roomCode, team_index: team, points_delta: delta,
         score_limit: limit ?? null, expected_version: expectedVersion });
@@ -86,13 +86,13 @@ export class GameService {
     const session = getLocalSession();
     if (session?.roomCode !== roomCode || session.playerId !== state.room.hostPlayerId) throw new Error('Solo el anfitrión puede anotar puntos.');
     if (expectedVersion !== (state.room.scoreVersion ?? 0)) throw new Error('El marcador cambió. Actualizá y reintentá.');
-    const scores: [number, number] = [...(state.room.scores ?? [0, 0])];
+    const scores: number[] = [...(state.room.scores ?? [0, 0])];
     const goal = state.room.scoreLimit ?? 30;
     if (limit !== undefined) {
       if (![15, 30].includes(limit) || state.room.status !== 'waiting' || scores.some(score => score !== 0)) throw new Error('Elegí 15 o 30 antes de comenzar el partido.');
       state.room.scoreLimit = limit;
     } else {
-      if (![0, 1].includes(team) || !Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 30) throw new Error('Puntos inválidos.');
+      if (!(state.room.maxPlayers === 3 ? [0, 1, 2] : [0, 1]).includes(team) || !Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 30) throw new Error('Puntos inválidos.');
       if (delta > 0 && scores.some(score => score >= goal)) throw new Error('El partido terminó. Podés corregir restando puntos.');
       if (scores[team] + delta < 0) throw new Error('El marcador no puede ser negativo.');
       scores[team] = Math.min(goal, scores[team] + delta);
@@ -126,11 +126,11 @@ export class GameService {
    */
   static async createRoom(
     hostName: string,
-    maxPlayers: 2 | 4 | 6 = 4
+    maxPlayers: 2 | 3 | 4 | 6 = 4
   ): Promise<{ room: Room; player: Player }> {
     hostName = hostName.trim();
     if (!hostName || hostName.length > 30) throw new Error('Ingresá un nombre de hasta 30 caracteres.');
-    if (![2, 4, 6].includes(maxPlayers)) throw new Error('Cantidad de jugadores inválida.');
+    if (![2, 3, 4, 6].includes(maxPlayers)) throw new Error('Cantidad de jugadores inválida.');
     if (isSupabaseConfigured) {
       const result = await gameRpc<{ room: Room; player: Player }>('mazo_create_room', {
         player_name: hostName, capacity: maxPlayers,
@@ -155,7 +155,7 @@ export class GameService {
       dealerPosition: 0,
       roundNumber: 1,
       gameType: 'truco',
-      scores: [0, 0], scoreLimit: 30, scoreVersion: 0,
+      scores: maxPlayers === 3 ? [0, 0, 0] : [0, 0], scoreLimit: 30, scoreVersion: 0,
       createdAt: new Date().toISOString(),
     };
 

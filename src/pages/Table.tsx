@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GameService, getLocalSession, clearLocalSession } from '../services/gameService';
 import { Room, Player, Card as CardType } from '../types';
+import { WaitingPhrase } from '../components/WaitingPhrase';
 import { Hand } from '../components/Hand/Hand';
 import { GuideIcon } from '../components/Icons';
 import { PlayerList } from '../components/PlayerList/PlayerList';
@@ -74,7 +75,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const isDealer = myPlayer?.position === room?.dealerPosition;
   const canDeal = isHost || isDealer;
   const matchEnded = room?.scores?.some(score => score >= (room.scoreLimit ?? 30)) ?? false;
-  const handleScore = async (team: 0 | 1, delta: number, limit?: 15 | 30) => {
+  const handleScore = async (team: 0 | 1 | 2, delta: number, limit?: 15 | 30) => {
     try {
       await GameService.updateScore(roomCode, team, delta, room?.scoreVersion ?? 0, limit);
     } finally {
@@ -211,6 +212,8 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
           </div>
         )}
 
+        {(room.status === 'waiting' || loadingAction || (!canDeal && !matchEnded)) && <WaitingPhrase />}
+        {room.maxPlayers === 3 && <p className="mb-3 text-center text-xs text-amber-200">Gallo: {players.find(p => p.position === room.dealerPosition)?.name || 'Esperando'} juega solo esta mano. Puntos individuales.</p>}
         {/* Hand View with Hold-to-Reveal */}
         <div className={`hand-transition w-full ${dealAnimation ? 'opacity-20 scale-95' : 'opacity-100 scale-100'}`}>
           <Hand

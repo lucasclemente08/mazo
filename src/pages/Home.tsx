@@ -14,7 +14,7 @@ interface HomeProps {
 export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initialRoomCode = '' }) => {
   const [view, setView] = useState<'main' | 'create' | 'join'>('main');
   const [hostName, setHostName] = useState('');
-  const [maxPlayers, setMaxPlayers] = useState<2 | 4 | 6>(4);
+  const [maxPlayers, setMaxPlayers] = useState<2 | 3 | 4 | 6>(4);
   const [joinName, setJoinName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -160,8 +160,8 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
               <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-2">
                 Cantidad de jugadores
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                {([2, 4, 6] as const).map((num) => (
+              <div className="grid grid-cols-4 gap-2">
+                {([2, 3, 4, 6] as const).map((num) => (
                   <button
                     key={num}
                     type="button"
@@ -173,7 +173,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
                         : 'bg-black/30 text-stone-300 border-stone-700 hover:border-stone-600'
                     }`}
                   >
-                    <PlayersIcon className="w-4 h-4 mx-auto mb-1" />{num} jugadores
+                    <PlayersIcon className="w-4 h-4 mx-auto mb-1" />{num}<span className="sr-only"> jugadores</span>
                   </button>
                 ))}
               </div>
@@ -181,7 +181,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
 
             <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/20 flex items-center gap-2.5 text-xs text-stone-300">
               <CardsIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>Juego: <strong>Truco Argentino</strong> (3 cartas por jugador)</span>
+              <span>Juego: <strong>{maxPlayers === 3 ? 'Truco Gallo' : 'Truco argentino'}</strong> · 3 cartas por jugador{maxPlayers === 3 && <span className="block mt-1">Puntos individuales. El repartidor juega solo y va rotando.</span>}</span>
             </div>
 
             <button

@@ -94,10 +94,10 @@ export const Card: React.FC<CardProps> = ({
       <div
         onClick={onClick}
         style={style}
-        className={`playing-card relative aspect-[5/8] w-28 sm:w-32 rounded-xl bg-gradient-to-br from-red-800 via-red-900 to-amber-950 p-2 shadow-2xl border-2 border-amber-400/60 select-none flex flex-col items-center justify-center transition-all duration-300 ${className}`}
+        className={`playing-card relative aspect-[5/8] w-28 sm:w-32 rounded-xl bg-gradient-to-br from-emerald-800 via-emerald-900 to-stone-950 p-2 shadow-2xl border-2 border-amber-400/60 select-none flex flex-col items-center justify-center transition-all duration-300 ${className}`}
       >
         <div className="absolute inset-1.5 rounded-lg border border-amber-300/40 border-dashed flex flex-col items-center justify-center p-2 bg-gradient-to-b from-black/20 to-black/40">
-          <div className="w-10 h-10 rounded-full border border-amber-400/50 flex items-center justify-center bg-red-950/70 text-amber-300 font-serif font-black text-xs tracking-wider">
+          <div className="w-10 h-10 rounded-full border border-amber-400/50 flex items-center justify-center bg-emerald-950/70 text-amber-300 font-serif font-black text-xs tracking-wider">
             MAZO
           </div>
           <div className="text-[10px] tracking-widest text-amber-200/60 uppercase mt-2 font-mono">

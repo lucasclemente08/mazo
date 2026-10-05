@@ -27,8 +27,9 @@ export function TrucoGuide({ onClose }: { onClose: () => void }) {
     <div className="p-5 space-y-5 text-sm leading-relaxed">
       {section === 'juego' && <>
         <section><h3 className="text-lg text-amber-100 font-semibold mb-2">La partida</h3>
-          <p>Juegan 2, 4 o 6 personas con 40 cartas españolas: sin 8, 9 ni comodines. En equipos, los compañeros se sientan alternados. Gana quien llega primero a 15 o 30 puntos; a 30, los primeros 15 son las malas y los siguientes las buenas.</p>
+          <p>Juegan 2, 3, 4 o 6 personas con 40 cartas españolas: sin 8, 9 ni comodines. En equipos, los compañeros se sientan alternados. Gana quien llega primero a 15 o 30 puntos; a 30, los primeros 15 son las malas y los siguientes las buenas.</p>
         </section>
+        <section><h3 className="text-lg text-amber-100 font-semibold mb-2">De a tres: Truco Gallo</h3><p>El repartidor juega solo contra los otros dos. El gallo rota en cada mano y cada jugador lleva sus propios puntos. Si gana la pareja, el anfitrión anota los puntos a cada integrante por separado. MAZO reparte tres cartas a cada uno; acuerden las variantes antes de empezar.</p></section>
         <section><h3 className="text-lg text-amber-100 font-semibold mb-2">Cada mano</h3>
           <ol className="list-decimal pl-5 space-y-2">
             <li>Se reparten tres cartas. Empieza quien está a la derecha del repartidor: es la mano.</li>

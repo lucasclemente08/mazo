@@ -27,11 +27,11 @@ export interface Room {
   code: string;
   hostPlayerId: string;
   status: RoomStatus;
-  maxPlayers: 2 | 4 | 6;
+  maxPlayers: 2 | 3 | 4 | 6;
   dealerPosition: number;
   roundNumber: number;
   gameType: 'truco';
-  scores?: [number, number];
+  scores?: number[];
   scoreLimit?: 15 | 30;
   scoreVersion?: number;
   createdAt?: string;
@@ -58,5 +58,5 @@ export const TRUCO_CONFIG: GameConfig = {
   name: 'Truco Argentino',
   deck: 'spanish40',
   cardsPerPlayer: 3,
-  allowedPlayers: [2, 4, 6],
+  allowedPlayers: [2, 3, 4, 6],
 };
