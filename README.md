@@ -21,7 +21,7 @@ Abrí http://localhost:3000. `npm run build` comprueba TypeScript y genera la PW
 
 Las operaciones de crear, unirse y repartir se ejecutan mediante RPC autenticadas. Las funciones validan pertenencia, capacidad y permiso del anfitrión/repartidor. El reparto ocurre en una transacción, y devuelve las cartas solamente al dueño de la sesión. El cliente consulta el estado cada dos segundos; no requiere configurar Realtime.
 
-Solo se conserva el estado necesario para jugar. Cada nueva mano elimina las cartas de la anterior; salir como anfitrión borra inmediatamente mesa, jugadores y cartas. Las mesas sin consultas de sus participantes vencen tras 30 minutos, y la tarea de limpieza las elimina dentro de los siguientes cinco minutos. No se guardan puntajes ni historial. Supabase puede conservar registros técnicos y copias de seguridad según su configuración: eliminar filas no garantiza borrar todas las copias del proveedor.
+Solo se conserva el estado necesario para jugar. Cada nueva mano elimina las cartas de la anterior; salir como anfitrión borra inmediatamente mesa, jugadores y cartas. Las mesas sin consultas de sus participantes vencen tras 30 minutos, y la tarea de limpieza las elimina dentro de los siguientes cinco minutos. El marcador se conserva solo durante la partida y se elimina con la mesa; no se guarda historial. Supabase puede conservar registros técnicos y copias de seguridad según su configuración: eliminar filas no garantiza borrar todas las copias del proveedor.
 
 Con Supabase configurado, los errores se muestran al usuario: no se cambia silenciosamente a una partida local. Sin variables de entorno se habilita una **demostración local**, limitada al mismo navegador y origen. Esa demostración guarda todas las manos en localStorage y no ofrece privacidad frente a quien inspeccione el almacenamiento; no sirve para conectar celulares.
 
@@ -40,3 +40,4 @@ Con Supabase configurado, los errores se muestran al usuario: no se cambia silen
 Configurá el hosting para servir `index.html` en las rutas `/r/*` y usá HTTPS para la PWA y el portapapeles. Las variables `VITE_*` se incorporan durante la compilación.
 
 Para comprobar la integración, abrí dos navegadores independientes (o uno en incógnito), creá una mesa de dos, ingresá con el enlace, repartí y verificá que cada sesión vea tres cartas distintas. Probá recargar, nombres repetidos, mesa completa y acciones sin permiso. Ejecutá `npm test` para las pruebas de regresión locales.
+
