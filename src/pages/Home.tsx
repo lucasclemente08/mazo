@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GameService } from '../services/gameService';
 import { isSupabaseConfigured } from '../services/supabase';
+import { TrucoGuide } from '../components/TrucoGuide';
 import { Users, Sparkles, ArrowRight, Dices, Layers } from 'lucide-react';
 
 interface HomeProps {
@@ -17,6 +18,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
   const [roomCode, setRoomCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
   useEffect(() => {
     if (initialRoomCode) { setRoomCode(initialRoomCode); setView('join'); }
   }, [initialRoomCode]);
@@ -275,9 +277,11 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
 
       {/* Footer disclaimer */}
       <div className="py-4 text-center text-[11px] text-stone-400">
+        <button type="button" onClick={() => setShowGuide(true)} className="mb-4 min-h-11 px-5 rounded-xl border border-amber-300/30 text-amber-200 text-sm font-semibold hover:bg-amber-300/10">Cómo se juega · Cartas y puntos</button>
         <p>“La aplicación reparte. Los jugadores juegan.”</p>
         <p className="mt-1 text-stone-500">Sin registro · Sin anuncios · Cartas ocultas al soltar</p>
       </div>
+      {showGuide && <TrucoGuide onClose={() => setShowGuide(false)} />}
     </div>
   );
 };

@@ -31,6 +31,9 @@ export interface Room {
   dealerPosition: number;
   roundNumber: number;
   gameType: 'truco';
+  scores?: [number, number];
+  scoreLimit?: 15 | 30;
+  scoreVersion?: number;
   createdAt?: string;
 }
 

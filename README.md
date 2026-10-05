@@ -32,6 +32,8 @@ Con Supabase configurado, los errores se muestran al usuario: no se cambia silen
 - Solo el anfitrión o repartidor puede comenzar o avanzar la ronda. El repartidor rota en cada nueva mano.
 - Las cartas se revelan mientras mantenés pulsado el botón (también con Espacio o Enter) y se ocultan al soltar o cambiar de pestaña.
 - Compartir un nombre no permite recuperar la identidad de otra persona.
+- Anotador compartido de dos equipos con meta de 15 o 30 puntos. Los asientos alternados forman cada equipo; el anfitrión suma o corrige tantos. La versión del marcador impide sobrescribir una anotación reciente desde otra pestaña. Los puntos persisten entre manos, y se borran con la mesa.
+- Guía accesible desde el inicio y desde la mesa: reglas, cantos, puntos, jerarquía de Truco y valores de Envido con ejemplos. Los cantos se resuelven entre jugadores; el anotador no decide automáticamente Falta Envido ni Flor.
 
 ## Publicación y verificación
 

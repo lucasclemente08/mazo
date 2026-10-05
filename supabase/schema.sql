@@ -13,6 +13,10 @@ create table if not exists public.players (
 );
 alter table public.players add column if not exists auth_user_id uuid references auth.users(id);
 alter table public.rooms alter column expires_at set default now() + interval '30 minutes';
+alter table public.rooms add column if not exists score_a integer not null default 0 check (score_a >= 0);
+alter table public.rooms add column if not exists score_b integer not null default 0 check (score_b >= 0);
+alter table public.rooms add column if not exists score_limit integer not null default 30 check (score_limit in (15,30));
+alter table public.rooms add column if not exists score_version integer not null default 0;
 create index if not exists rooms_expiry on public.rooms(expires_at);
 create unique index if not exists players_room_owner on public.players(room_id,auth_user_id);
 create index if not exists players_owner on public.players(auth_user_id);
@@ -44,7 +48,8 @@ begin
  end if;
  return jsonb_build_object(
   'room',jsonb_build_object('id',r.id,'code',r.code,'hostPlayerId',r.host_player_id,'status',r.status,
-   'maxPlayers',r.max_players,'dealerPosition',r.dealer_position,'roundNumber',r.round_number,'gameType','truco','createdAt',r.created_at),
+   'maxPlayers',r.max_players,'dealerPosition',r.dealer_position,'roundNumber',r.round_number,'gameType','truco','createdAt',r.created_at,
+   'scores',jsonb_build_array(r.score_a,r.score_b),'scoreLimit',r.score_limit,'scoreVersion',r.score_version),
   'players',coalesce((select jsonb_agg(jsonb_build_object('id',s.id,'roomId',s.room_id,'name',s.name,
    'position',s.position,'connected',s.connected,'createdAt',s.created_at) order by s.position)
    from public.players s where s.room_id = r.id),'[]'::jsonb),
@@ -112,6 +117,7 @@ begin
   raise exception 'Solo el anfitrión o repartidor puede repartir.';
  end if;
  if expected_round is null or expected_round <> r.round_number then raise exception 'La ronda cambió. Actualizá la mesa.'; end if;
+ if r.score_a >= r.score_limit or r.score_b >= r.score_limit then raise exception 'El partido terminó. Cerrá la mesa o corregí el marcador.'; end if;
  if next_round is null or (next_round and r.status <> 'playing') or (not next_round and r.status <> 'waiting') then
   raise exception 'La partida cambió. Actualizá la mesa.';
  end if;
@@ -135,6 +141,37 @@ begin
 end $$;
 
 -- Ending a game deletes its room, players and hands together via cascading FKs.
+create or replace function public.mazo_score(room_code text,team_index integer,points_delta integer,score_limit integer,expected_version integer) returns void
+language plpgsql security definer set search_path = '' as $$
+declare r public.rooms; actor public.players; current_points integer;
+begin
+ if auth.uid() is null then raise exception 'Sesión requerida'; end if;
+ select * into r from public.rooms where code = upper(trim(room_code)) and expires_at > now() for update;
+ if not found then raise exception 'La mesa no existe o venció.'; end if;
+ select * into actor from public.players where room_id = r.id and auth_user_id = auth.uid();
+ if not found or actor.id <> r.host_player_id then raise exception 'Solo el anfitrión puede anotar puntos.'; end if;
+ if expected_version is null or expected_version <> r.score_version then raise exception 'El marcador cambió. Actualizá y reintentá.'; end if;
+ if score_limit is not null then
+  if score_limit not in (15,30) or r.status <> 'waiting' or r.score_a <> 0 or r.score_b <> 0 then
+   raise exception 'Elegí 15 o 30 antes de comenzar el partido.';
+  end if;
+  update public.rooms set score_limit = mazo_score.score_limit,score_version = r.score_version + 1 where id = r.id;
+ else
+  if team_index is null or team_index not in (0,1) or points_delta is null or points_delta = 0 or abs(points_delta::bigint) > 30 then
+   raise exception 'Puntos inválidos.';
+  end if;
+  if points_delta > 0 and (r.score_a >= r.score_limit or r.score_b >= r.score_limit) then
+   raise exception 'El partido terminó. Podés corregir restando puntos.';
+  end if;
+  current_points := case when team_index = 0 then r.score_a else r.score_b end;
+  if current_points + points_delta < 0 then raise exception 'El marcador no puede ser negativo.'; end if;
+  current_points := least(r.score_limit,current_points + points_delta);
+  update public.rooms set score_a = case when team_index = 0 then current_points else r.score_a end,
+   score_b = case when team_index = 1 then current_points else r.score_b end,
+   score_version = r.score_version + 1 where id = r.id;
+ end if;
+end $$;
+
 create or replace function public.mazo_leave_room(room_code text) returns void
 language plpgsql security definer set search_path = '' as $$
 declare r public.rooms; p public.players;
@@ -162,8 +199,8 @@ begin
 end $$;
 revoke all on function public.mazo_cleanup() from public,anon,authenticated;
 
-revoke all on function public.mazo_leave_room(text),public.mazo_room_state(text),public.mazo_create_room(text,integer),
+revoke all on function public.mazo_score(text,integer,integer,integer,integer),public.mazo_leave_room(text),public.mazo_room_state(text),public.mazo_create_room(text,integer),
  public.mazo_join_room(text,text),public.mazo_deal(text,boolean,integer) from public,anon;
-grant execute on function public.mazo_leave_room(text),public.mazo_room_state(text),public.mazo_create_room(text,integer),
+grant execute on function public.mazo_score(text,integer,integer,integer,integer),public.mazo_leave_room(text),public.mazo_room_state(text),public.mazo_create_room(text,integer),
  public.mazo_join_room(text,text),public.mazo_deal(text,boolean,integer) to authenticated;
 commit;

@@ -4,6 +4,8 @@ import { Room, Player, Card as CardType } from '../types';
 import { Hand } from '../components/Hand/Hand';
 import { PlayerList } from '../components/PlayerList/PlayerList';
 import { RoomQRCode } from '../components/QRCode/RoomQRCode';
+import { Scoreboard } from '../components/Scoreboard';
+import { TrucoGuide } from '../components/TrucoGuide';
 import { Play, RotateCcw, QrCode, ArrowLeft, Users, RefreshCw } from 'lucide-react';
 
 interface TableProps {
@@ -20,6 +22,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const [loadingAction, setLoadingAction] = useState(false);
   const [dealAnimation, setDealAnimation] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   const session = getLocalSession();
 
@@ -68,6 +71,14 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const isHost = myPlayer?.id === room?.hostPlayerId;
   const isDealer = myPlayer?.position === room?.dealerPosition;
   const canDeal = isHost || isDealer;
+  const matchEnded = room?.scores?.some(score => score >= (room.scoreLimit ?? 30)) ?? false;
+  const handleScore = async (team: 0 | 1, delta: number, limit?: 15 | 30) => {
+    try {
+      await GameService.updateScore(roomCode, team, delta, room?.scoreVersion ?? 0, limit);
+    } finally {
+      await refreshState();
+    }
+  };
 
   const handleDeal = async () => {
     if (!canDeal || loadingAction) return;
@@ -135,6 +146,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
       {/* Top Bar Navigation */}
       <header className="flex items-center justify-between pb-3 border-b border-white/10">
         <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setShowGuide(true)} className="min-h-11 px-3 rounded-xl border border-stone-600 text-xs text-amber-200 hover:bg-stone-800">Guía</button>
           <button
             onClick={handleExit}
             disabled={loadingAction}
@@ -207,12 +219,13 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
 
       {/* Bottom Controls / Seating list */}
       <footer className="space-y-4 pt-2">
+        <Scoreboard room={room} players={players} isHost={isHost} disabled={loadingAction} onUpdate={handleScore} />
         {/* Deal / Next Hand Action Buttons */}
         <div className="w-full">
           {room.status === 'waiting' ? (
             <button
               onClick={handleDeal}
-              disabled={loadingAction || !canDeal || players.length !== room.maxPlayers}
+              disabled={loadingAction || !canDeal || matchEnded || players.length !== room.maxPlayers}
               className={`w-full py-4 rounded-2xl font-black text-lg tracking-wide shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
                 canDeal
                   ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-amber-500/20 hover:from-amber-400'
@@ -225,7 +238,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
           ) : (
             <button
               onClick={handleNewRound}
-              disabled={loadingAction || !canDeal}
+              disabled={loadingAction || !canDeal || matchEnded}
               className={`w-full py-4 rounded-2xl font-black text-lg tracking-wide shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
                 canDeal
                   ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20 border border-emerald-400/40'
@@ -247,6 +260,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
         />
         <p className="text-center text-[11px] text-stone-400">{isHost ? 'Salir cierra la mesa y borra las cartas.' : 'Las mesas abandonadas se borran automáticamente.'} No guardamos historial.</p>
       </footer>
+      {showGuide && <TrucoGuide onClose={() => setShowGuide(false)} />}
 
       {/* QR Modal */}
       {showQRModal && (

@@ -83,6 +83,30 @@ test('Configured backend failures propagate without a local fallback', async () 
   await assert.rejects(game.GameService.joinRoom('ABCD', 'Guest'), /Backend unavailable/);
 });
 
+test('Scoreboard validates host, version, target, corrections and stops a completed match', async () => {
+  const game = service();
+  const { room, player } = await game.GameService.createRoom('Host', 2);
+  await game.GameService.updateScore(room.code, 0, 0, 0, 15);
+  await assert.rejects(game.GameService.updateScore(room.code, 0, 1, 0), /marcador cambió/);
+  await assert.rejects(game.GameService.updateScore(room.code, 0, -1, 1), /negativo/);
+  await game.GameService.updateScore(room.code, 0, 14, 1);
+  game.clearLocalSession();
+  await game.GameService.joinRoom(room.code, 'Guest');
+  await assert.rejects(game.GameService.updateScore(room.code, 1, 1, 2), /anfitrión/);
+  game.saveLocalSession({ roomCode: room.code, playerId: player.id, playerName: player.name });
+  await game.GameService.dealCards(room.code);
+  await game.GameService.newRound(room.code);
+  assert.equal((await game.GameService.getRoomState(room.code, player.id)).room.scores[0], 14);
+  await game.GameService.updateScore(room.code, 0, 4, 2);
+  assert.equal((await game.GameService.getRoomState(room.code, player.id)).room.scores[0], 15);
+  await assert.rejects(game.GameService.newRound(room.code), /terminó/);
+  await assert.rejects(game.GameService.updateScore(room.code, 1, 1, 3), /terminó/);
+  await game.GameService.updateScore(room.code, 0, -1, 3);
+  await game.GameService.newRound(room.code);
+  await game.GameService.leaveRoom(room.code);
+  assert.equal(await game.GameService.getRoomState(room.code, player.id), null);
+});
+
 test('Remote actions send the expected round and store server identity', async () => {
   const calls = [];
   const game = service(true, async (name, args) => {
