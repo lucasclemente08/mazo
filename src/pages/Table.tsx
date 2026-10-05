@@ -4,10 +4,10 @@ import { Room, Player, Card as CardType } from '../types';
 import { Hand } from '../components/Hand/Hand';
 import { GuideIcon } from '../components/Icons';
 import { PlayerList } from '../components/PlayerList/PlayerList';
-import { RoomQRCode } from '../components/QRCode/RoomQRCode';
+import { ShareRoomDialog } from '../components/QRCode/ShareRoomDialog';
 import { Scoreboard } from '../components/Scoreboard';
 import { TrucoGuide } from '../components/TrucoGuide';
-import { Play, RotateCcw, QrCode, ArrowLeft, Users, RefreshCw, X } from 'lucide-react';
+import { Play, RotateCcw, QrCode, ArrowLeft, Users, RefreshCw } from 'lucide-react';
 
 interface TableProps {
   roomCode: string;
@@ -269,19 +269,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
       {showGuide && <TrucoGuide onClose={() => setShowGuide(false)} />}
 
       {/* QR Modal */}
-      {showQRModal && (
-        <div className="qr-overlay fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="qr-panel relative w-full max-w-sm">
-            <button
-              aria-label="Cerrar invitación" onClick={() => setShowQRModal(false)}
-              className="absolute top-3 right-3 text-stone-400 hover:text-white p-2 rounded-full bg-black/40"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <RoomQRCode code={room.code} />
-          </div>
-        </div>
-      )}
+      {showQRModal && <ShareRoomDialog code={room.code} onClose={() => setShowQRModal(false)} />}
     </div>
   );
 };

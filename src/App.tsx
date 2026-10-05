@@ -23,6 +23,7 @@ export const App: React.FC = () => {
     // 2. Check localStorage session for instant reconnection
     setInvitationCode('');
     if (resumeSession && session && session.roomCode) {
+      window.history.replaceState({}, '', `/r/${session.roomCode}`);
       setActiveRoomCode(session.roomCode);
     } else {
       setActiveRoomCode(null);
