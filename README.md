@@ -15,10 +15,13 @@ Abrí http://localhost:3000. `npm run build` comprueba TypeScript y genera la PW
 
 1. Ejecutá `supabase/schema.sql` en el SQL Editor de tu proyecto. Sirve para una instalación nueva y para actualizar el esquema original. No borra las mesas existentes, pero sus jugadores antiguos no tienen identidad autenticada: creá mesas nuevas después de actualizar.
 2. Activá **Authentication → Sign In / Providers → Anonymous Sign-Ins**. No se pide correo ni contraseña. Cada navegador conserva su identidad de Supabase; borrar sus datos impide recuperar esa mano.
-3. Copiá `.env.example` a `.env` y completá la URL y la clave pública anon de tu proyecto. Nunca uses una clave `service_role` en el frontend.
-4. Reiniciá Vite, o volvé a compilar si estás publicando la aplicación.
+3. En un proyecto dedicado a MAZO ejecutá también `supabase/cleanup.sql`: limpia las mesas vencidas cada cinco minutos y las identidades anónimas sin mesa de más de una hora. Este archivo no debe usarse en un proyecto que comparta identidades anónimas con otras aplicaciones.
+4. Copiá `.env.example` a `.env` y completá la URL y la clave pública publishable/anon de tu proyecto. Nunca uses una clave `service_role` en el frontend.
+5. Reiniciá Vite, o volvé a compilar si estás publicando la aplicación.
 
-Las operaciones de crear, unirse y repartir se ejecutan mediante RPC autenticadas. Las funciones validan pertenencia, capacidad y permiso del anfitrión/repartidor. El reparto ocurre en una transacción, y devuelve las cartas solamente al dueño de la sesión. El cliente consulta el estado cada dos segundos; no requiere configurar Realtime. Las mesas vencen a las seis horas.
+Las operaciones de crear, unirse y repartir se ejecutan mediante RPC autenticadas. Las funciones validan pertenencia, capacidad y permiso del anfitrión/repartidor. El reparto ocurre en una transacción, y devuelve las cartas solamente al dueño de la sesión. El cliente consulta el estado cada dos segundos; no requiere configurar Realtime.
+
+Solo se conserva el estado necesario para jugar. Cada nueva mano elimina las cartas de la anterior; salir como anfitrión borra inmediatamente mesa, jugadores y cartas. Las mesas sin consultas de sus participantes vencen tras 30 minutos, y la tarea de limpieza las elimina dentro de los siguientes cinco minutos. No se guardan puntajes ni historial. Supabase puede conservar registros técnicos y copias de seguridad según su configuración: eliminar filas no garantiza borrar todas las copias del proveedor.
 
 Con Supabase configurado, los errores se muestran al usuario: no se cambia silenciosamente a una partida local. Sin variables de entorno se habilita una **demostración local**, limitada al mismo navegador y origen. Esa demostración guarda todas las manos en localStorage y no ofrece privacidad frente a quien inspeccione el almacenamiento; no sirve para conectar celulares.
 

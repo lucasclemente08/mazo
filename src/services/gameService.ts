@@ -75,6 +75,25 @@ function saveLocalState(roomCode: string, state: LocalRoomState) {
 }
 
 export class GameService {
+  static async leaveRoom(roomCode: string): Promise<void> {
+    if (isSupabaseConfigured) {
+      await gameRpc('mazo_leave_room', { room_code: roomCode });
+    } else {
+      const state = getLocalState(roomCode);
+      const player = state?.players.find(p => p.id === getLocalSession()?.playerId);
+      if (state && player?.id === state.room.hostPlayerId) {
+        const all = JSON.parse(localStorage.getItem(LOCAL_ROOMS_KEY) || '{}');
+        delete all[roomCode];
+        localStorage.setItem(LOCAL_ROOMS_KEY, JSON.stringify(all));
+        window.dispatchEvent(new CustomEvent('mazo_local_update', { detail: { roomCode } }));
+      } else if (state && player) {
+        player.connected = false;
+        saveLocalState(roomCode, state);
+      }
+    }
+    clearLocalSession();
+  }
+
   /**
    * Create a new room
    */

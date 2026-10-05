@@ -101,10 +101,16 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
     }
   };
 
-  const handleExit = () => {
-    if (confirm('¿Seguro que querés salir de la mesa?')) {
-      clearLocalSession();
+  const handleExit = async () => {
+    if (loadingAction || !confirm(isHost ? '¿Cerrar la mesa y borrar sus cartas para todos?' : '¿Salir de la mesa? Podés volver a entrar con este navegador.')) return;
+    setLoadingAction(true);
+    try {
+      await GameService.leaveRoom(roomCode);
       onLeave();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No se pudo salir. Reintentá.');
+    } finally {
+      setLoadingAction(false);
     }
   };
 
@@ -131,6 +137,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExit}
+            disabled={loadingAction}
             className="p-2 rounded-xl bg-black/40 hover:bg-black/60 text-stone-300 transition-colors"
             title="Salir de la mesa"
           >
@@ -238,6 +245,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
           dealerPosition={room.dealerPosition}
           currentUserId={myPlayer.id}
         />
+        <p className="text-center text-[11px] text-stone-400">{isHost ? 'Salir cierra la mesa y borra las cartas.' : 'Las mesas abandonadas se borran automáticamente.'} No guardamos historial.</p>
       </footer>
 
       {/* QR Modal */}
