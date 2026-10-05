@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { GameService } from '../services/gameService';
 import { isSupabaseConfigured } from '../services/supabase';
 import { TrucoGuide } from '../components/TrucoGuide';
-import { Users, Sparkles, ArrowRight, Dices, Layers } from 'lucide-react';
+import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { CardsIcon, PlayersIcon, JoinIcon, GuideIcon } from '../components/Icons';
 
 interface HomeProps {
   onRoomCreated: (code: string) => void;
@@ -66,28 +67,16 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
   };
 
   return (
-    <div className="flex flex-col min-h-screen felt-bg text-white justify-between p-4 sm:p-6 max-w-md mx-auto">
+    <div className="home-shell flex flex-col min-h-screen felt-bg text-white justify-between p-4 sm:p-6 max-w-md mx-auto">
       {/* Header / Brand */}
-      <div className="flex flex-col items-center pt-8 pb-4 text-center">
-        <div className="relative mb-3">
-          <div className="w-20 h-24 rounded-2xl bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-200 p-0.5 shadow-2xl rotate-3">
-            <div className="w-full h-full bg-felt-dark rounded-[14px] flex flex-col items-center justify-center p-2 border border-amber-300/30">
-              <span className="text-3xl">🃏</span>
-              <span className="text-[10px] font-mono tracking-widest text-amber-300 font-bold mt-1">
-                MAZO
-              </span>
-            </div>
-          </div>
-          <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-emerald-500/30 flex items-center justify-center border border-emerald-400/40 animate-pulse">
-            <Sparkles className="w-3 h-3 text-emerald-300" />
-          </div>
-        </div>
+      <div className="home-brand flex flex-col items-center text-center">
+        <div className="brand-mark"><CardsIcon /></div>
 
         <h1 className="text-4xl font-black tracking-tight text-amber-100 uppercase">
           MAZO
         </h1>
         <p className="text-stone-300 text-sm mt-1 max-w-[260px]">
-          Tu baraja física virtual compartida. Jugá al Truco sin cartas.
+          La mesa de siempre, en tu celular. Compartí el código y empezá a jugar.
         </p>
       </div>
 
@@ -97,22 +86,22 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
           Demo local: las mesas solo funcionan en este navegador. Configurá Supabase para conectar celulares.
         </p>}
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs text-center backdrop-blur-sm">
+          <div role="alert" className="mb-4 p-3 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs text-center backdrop-blur-sm">
             {error}
           </div>
         )}
 
         {view === 'main' && (
-          <div className="space-y-4">
+          <div className="view-enter space-y-4">
             <button
               onClick={() => {
                 setError(null);
                 setView('create');
               }}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-lg tracking-wide shadow-xl shadow-amber-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              className="action-primary w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-lg tracking-wide shadow-xl shadow-amber-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
-              <Layers className="w-5 h-5 text-stone-900" />
-              <span>CREAR MESA</span>
+              <CardsIcon className="w-5 h-5 text-stone-900" />
+              <span>Crear mesa</span>
             </button>
 
             <div className="relative flex py-2 items-center">
@@ -128,10 +117,10 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
                 setError(null);
                 setView('join');
               }}
-              className="w-full py-4 px-6 rounded-2xl bg-stone-900/90 hover:bg-stone-800 text-stone-100 font-bold text-base border border-stone-700/80 shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              className="action-secondary w-full py-4 px-6 rounded-2xl bg-stone-900/90 hover:bg-stone-800 text-stone-100 font-bold text-base border border-stone-700/80 shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
-              <Users className="w-5 h-5 text-amber-400" />
-              <span>TENGO UN CÓDIGO</span>
+              <JoinIcon className="w-5 h-5 text-amber-400" />
+              <span>Unirme con código</span>
             </button>
           </div>
         )}
@@ -139,10 +128,10 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
         {view === 'create' && (
           <form
             onSubmit={handleCreate}
-            className="bg-stone-900/90 border border-emerald-800/60 rounded-3xl p-6 shadow-2xl backdrop-blur-md space-y-5"
+            className="view-enter bg-stone-900/90 border border-emerald-800/60 rounded-3xl p-6 shadow-2xl backdrop-blur-md space-y-5"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-amber-100">Crear Nueva Mesa</h2>
+              <h2 className="text-xl font-bold text-amber-100">Crear una mesa</h2>
               <button
                 type="button"
                 onClick={() => setView('main')}
@@ -154,13 +143,13 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
 
             <div>
               <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-2">
-                Tu Nombre
+                Tu nombre
               </label>
               <input
                 type="text"
                 required
                 placeholder="Ej. Lucas"
-                value={hostName}
+                aria-label="Tu nombre" autoComplete="nickname" value={hostName}
                 maxLength={30}
                 onChange={(e) => setHostName(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-black/40 border border-stone-700 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 font-medium"
@@ -169,13 +158,14 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
 
             <div>
               <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-2">
-                Cantidad de Jugadores
+                Cantidad de jugadores
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {([2, 4, 6] as const).map((num) => (
                   <button
                     key={num}
                     type="button"
+                    aria-pressed={maxPlayers === num}
                     onClick={() => setMaxPlayers(num)}
                     className={`py-3 rounded-xl font-bold text-sm transition-all border ${
                       maxPlayers === num
@@ -183,14 +173,14 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
                         : 'bg-black/30 text-stone-300 border-stone-700 hover:border-stone-600'
                     }`}
                   >
-                    {num} Jugadores
+                    <PlayersIcon className="w-4 h-4 mx-auto mb-1" />{num} jugadores
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/20 flex items-center gap-2.5 text-xs text-stone-300">
-              <Dices className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <CardsIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>Juego: <strong>Truco Argentino</strong> (3 cartas por jugador)</span>
             </div>
 
@@ -200,7 +190,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-stone-950 font-bold tracking-wide shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               {loading ? (
-                <span>Creando mesa...</span>
+                <><LoaderCircle className="w-5 h-5 animate-spin" /><span role="status">Creando mesa…</span></>
               ) : (
                 <>
                   <span>CREAR Y COMPARTIR</span>
@@ -214,10 +204,10 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
         {view === 'join' && (
           <form
             onSubmit={handleJoin}
-            className="bg-stone-900/90 border border-emerald-800/60 rounded-3xl p-6 shadow-2xl backdrop-blur-md space-y-5"
+            className="view-enter bg-stone-900/90 border border-emerald-800/60 rounded-3xl p-6 shadow-2xl backdrop-blur-md space-y-5"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-amber-100">Unirse a Mesa</h2>
+              <h2 className="text-xl font-bold text-amber-100">Unirme a una mesa</h2>
               <button
                 type="button"
                 onClick={() => setView('main')}
@@ -229,14 +219,14 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
 
             <div>
               <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-2">
-                Código de la Mesa
+                Código de la mesa
               </label>
               <input
                 type="text"
                 required
                 maxLength={4}
                 placeholder="Ej. 7K3P"
-                value={roomCode}
+                aria-label="Código de la mesa" autoCapitalize="characters" spellCheck={false} value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 className="w-full px-4 py-3 text-center tracking-widest text-2xl font-mono uppercase rounded-xl bg-black/40 border border-stone-700 text-amber-300 placeholder-stone-600 focus:outline-none focus:border-amber-400"
               />
@@ -244,13 +234,13 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
 
             <div>
               <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-2">
-                Tu Nombre
+                Tu nombre
               </label>
               <input
                 type="text"
                 required
                 placeholder="Ej. Juan"
-                value={joinName}
+                aria-label="Tu nombre" autoComplete="nickname" value={joinName}
                 maxLength={30}
                 onChange={(e) => setJoinName(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-black/40 border border-stone-700 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 font-medium"
@@ -263,7 +253,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
               className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold tracking-wide shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               {loading ? (
-                <span>Ingresando...</span>
+                <><LoaderCircle className="w-5 h-5 animate-spin" /><span role="status">Entrando…</span></>
               ) : (
                 <>
                   <span>ENTRAR A LA MESA</span>
@@ -277,7 +267,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
 
       {/* Footer disclaimer */}
       <div className="py-4 text-center text-[11px] text-stone-400">
-        <button type="button" onClick={() => setShowGuide(true)} className="mb-4 min-h-11 px-5 rounded-xl border border-amber-300/30 text-amber-200 text-sm font-semibold hover:bg-amber-300/10">Cómo se juega · Cartas y puntos</button>
+        <button type="button" onClick={() => setShowGuide(true)} className="inline-flex items-center justify-center gap-2 mb-4 min-h-11 px-5 rounded-xl border border-amber-300/30 text-amber-200 text-sm font-semibold hover:bg-amber-300/10"><GuideIcon className="w-5 h-5" />Cómo se juega · Cartas y puntos</button>
         <p>“La aplicación reparte. Los jugadores juegan.”</p>
         <p className="mt-1 text-stone-500">Sin registro · Sin anuncios · Cartas ocultas al soltar</p>
       </div>

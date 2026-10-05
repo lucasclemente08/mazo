@@ -37,7 +37,7 @@ export function Scoreboard({ room, players, isHost, disabled, onUpdate }: Props)
       {([0, 1] as const).map(team => <div key={team} className={`text-center ${team === 0 ? 'pr-3' : 'pl-3'}`}>
         <h3 className="text-sm font-semibold text-stone-200">Equipo {team + 1}</h3>
         <p className="text-[11px] text-stone-400 min-h-8 break-words">{players.filter(p => p.position % 2 === team).map(p => p.name).join(' · ') || 'Esperando jugadores'}</p>
-        <p className="font-mono text-5xl tabular-nums text-amber-100 my-2" aria-label={`Equipo ${team + 1}: ${scores[team]} puntos`}>{scores[team]}</p>
+        <p key={scores[team]} className="score-value font-mono text-5xl tabular-nums text-amber-100 my-2" aria-label={`Equipo ${team + 1}: ${scores[team]} puntos`}>{scores[team]}</p>
         <p className="text-xs text-stone-400 mb-3">{winner === team ? 'Ganó el partido' : limit === 30 ? (scores[team] < 15 ? 'Malas' : 'Buenas') : 'Puntos'}</p>
         {isHost && <div className="flex justify-center gap-2">
           <button type="button" disabled={busy || disabled || scores[team] < amount} onClick={() => update(team, -amount)}

@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { GameService, getLocalSession, clearLocalSession } from '../services/gameService';
 import { Room, Player, Card as CardType } from '../types';
 import { Hand } from '../components/Hand/Hand';
+import { GuideIcon } from '../components/Icons';
 import { PlayerList } from '../components/PlayerList/PlayerList';
 import { RoomQRCode } from '../components/QRCode/RoomQRCode';
 import { Scoreboard } from '../components/Scoreboard';
 import { TrucoGuide } from '../components/TrucoGuide';
-import { Play, RotateCcw, QrCode, ArrowLeft, Users, RefreshCw } from 'lucide-react';
+import { Play, RotateCcw, QrCode, ArrowLeft, Users, RefreshCw, X } from 'lucide-react';
 
 interface TableProps {
   roomCode: string;
@@ -22,6 +23,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const [loadingAction, setLoadingAction] = useState(false);
   const [dealAnimation, setDealAnimation] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
 
   const session = getLocalSession();
@@ -83,6 +85,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const handleDeal = async () => {
     if (!canDeal || loadingAction) return;
     try {
+      setActionError(null);
       setLoadingAction(true);
       setDealAnimation(true);
       await GameService.dealCards(roomCode);
@@ -90,7 +93,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
       setTimeout(() => setDealAnimation(false), 600);
     } catch (err: any) {
       setDealAnimation(false);
-      alert(err.message);
+      setActionError(err.message || 'No se pudo completar la acción.');
     } finally {
       setLoadingAction(false);
     }
@@ -99,6 +102,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const handleNewRound = async () => {
     if (!canDeal || loadingAction) return;
     try {
+      setActionError(null);
       setLoadingAction(true);
       setDealAnimation(true);
       await GameService.newRound(roomCode, room?.roundNumber);
@@ -106,7 +110,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
       setTimeout(() => setDealAnimation(false), 600);
     } catch (err: any) {
       setDealAnimation(false);
-      alert(err.message);
+      setActionError(err.message || 'No se pudo completar la acción.');
     } finally {
       setLoadingAction(false);
     }
@@ -114,12 +118,13 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
 
   const handleExit = async () => {
     if (loadingAction || !confirm(isHost ? '¿Cerrar la mesa y borrar sus cartas para todos?' : '¿Salir de la mesa? Podés volver a entrar con este navegador.')) return;
-    setLoadingAction(true);
+    setActionError(null);
+      setLoadingAction(true);
     try {
       await GameService.leaveRoom(roomCode);
       onLeave();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'No se pudo salir. Reintentá.');
+      setActionError(err instanceof Error ? err.message : 'No se pudo salir. Reintentá.');
     } finally {
       setLoadingAction(false);
     }
@@ -146,12 +151,12 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
       {/* Top Bar Navigation */}
       <header className="flex items-center justify-between pb-3 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setShowGuide(true)} className="min-h-11 px-3 rounded-xl border border-stone-600 text-xs text-amber-200 hover:bg-stone-800">Guía</button>
+          <button type="button" onClick={() => setShowGuide(true)} className="min-h-11 px-3 rounded-xl border border-stone-600 text-xs text-amber-200 hover:bg-stone-800"><GuideIcon className="w-4 h-4 inline mr-1" />Guía</button>
           <button
             onClick={handleExit}
             disabled={loadingAction}
             className="p-2 rounded-xl bg-black/40 hover:bg-black/60 text-stone-300 transition-colors"
-            title="Salir de la mesa"
+            aria-label="Salir de la mesa" title="Salir de la mesa"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -172,7 +177,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowQRModal(true)}
+            aria-label="Invitar jugadores con QR" onClick={() => setShowQRModal(true)}
             className="p-2.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-200 transition-all flex items-center gap-1.5 text-xs font-semibold"
           >
             <QrCode className="w-4 h-4" />
@@ -207,7 +212,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
         )}
 
         {/* Hand View with Hold-to-Reveal */}
-        <div className={`w-full transition-opacity duration-300 ${dealAnimation ? 'opacity-20 scale-95' : 'opacity-100 scale-100'}`}>
+        <div className={`hand-transition w-full ${dealAnimation ? 'opacity-20 scale-95' : 'opacity-100 scale-100'}`}>
           <Hand
             key={room.roundNumber}
             cards={myHand}
@@ -219,6 +224,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
 
       {/* Bottom Controls / Seating list */}
       <footer className="space-y-4 pt-2">
+        {actionError && <p role="alert" className="error-notice rounded-xl border border-rose-400/30 bg-rose-950/70 p-3 text-sm text-rose-200">{actionError}</p>}
         <Scoreboard room={room} players={players} isHost={isHost} disabled={loadingAction} onUpdate={handleScore} />
         {/* Deal / Next Hand Action Buttons */}
         <div className="w-full">
@@ -264,13 +270,13 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
 
       {/* QR Modal */}
       {showQRModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative w-full max-w-sm">
+        <div className="qr-overlay fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="qr-panel relative w-full max-w-sm">
             <button
-              onClick={() => setShowQRModal(false)}
+              aria-label="Cerrar invitación" onClick={() => setShowQRModal(false)}
               className="absolute top-3 right-3 text-stone-400 hover:text-white p-2 rounded-full bg-black/40"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
             <RoomQRCode code={room.code} />
           </div>

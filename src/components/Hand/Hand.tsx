@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card as CardType } from '../../types';
 import { Card } from '../Card/Card';
+import { CardsIcon } from '../Icons';
 import { Eye, EyeOff, Shield } from 'lucide-react';
 
 interface HandProps {
@@ -57,7 +58,7 @@ export const Hand: React.FC<HandProps> = ({
       <div className="flex justify-center items-center gap-2.5 sm:gap-4 py-4 w-full">
         {cards.length === 0 ? (
           <div className="h-44 flex flex-col items-center justify-center text-stone-400 border border-dashed border-stone-600/50 rounded-2xl w-full p-6 text-center">
-            <span className="text-3xl mb-2">🂠</span>
+            <CardsIcon className="w-9 h-9 mb-3 text-amber-200/60" />
             <p className="text-sm">Esperando que el repartidor entregue las cartas...</p>
           </div>
         ) : (
