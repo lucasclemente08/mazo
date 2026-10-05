@@ -40,6 +40,11 @@ export function dealCards(
   playerCount: number,
   cardsPerPlayer: number = 3
 ): Card[][] {
+  if (!Number.isInteger(playerCount) || playerCount < 1 ||
+      !Number.isInteger(cardsPerPlayer) || cardsPerPlayer < 1 ||
+      playerCount * cardsPerPlayer > deck.length) {
+    throw new Error('No hay suficientes cartas o la cantidad de jugadores es inválida.');
+  }
   const hands: Card[][] = Array.from({ length: playerCount }, () => []);
   let cardIndex = 0;
 

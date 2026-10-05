@@ -1,6 +1,7 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Check, Share2 } from 'lucide-react';
+import { isSupabaseConfigured } from '../../services/supabase';
 
 interface RoomQRCodeProps {
   code: string;
@@ -61,7 +62,7 @@ export const RoomQRCode: React.FC<RoomQRCodeProps> = ({ code, url }) => {
       </div>
 
       <p className="text-xs text-stone-400 mt-4 text-center">
-        Escaneá con la cámara de tu celular para unirte al instante
+        {isSupabaseConfigured ? 'Escaneá con la cámara de tu celular para unirte.' : 'Demo local: este enlace solo funciona en el mismo navegador.'}
       </p>
 
       <div className="flex gap-2 w-full mt-4">

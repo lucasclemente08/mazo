@@ -19,18 +19,29 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const [showQRModal, setShowQRModal] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
   const [dealAnimation, setDealAnimation] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const session = getLocalSession();
 
   const refreshState = async () => {
-    if (!session) return;
+    if (!session || session.roomCode !== roomCode) {
+      setLoadError('Ingresá a la mesa con tu nombre.');
+      return;
+    }
+    try {
     const state = await GameService.getRoomState(roomCode, session.playerId);
-    if (state) {
+    if (state && state.players.some((p) => p.id === session.playerId)) {
+      setLoadError(null);
       setRoom(state.room);
       setPlayers(state.players);
       setMyHand(state.myHand);
       const current = state.players.find((p) => p.id === session.playerId);
       if (current) setMyPlayer(current);
+    } else {
+      setLoadError('La mesa no existe, venció o tu sesión ya no pertenece a ella.');
+    }
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'No se pudo cargar la mesa.');
     }
   };
 
@@ -44,10 +55,12 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
       }
     };
     window.addEventListener('mazo_local_update', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
     const interval = setInterval(refreshState, 2000); // Polling backup for seamless state
 
     return () => {
       window.removeEventListener('mazo_local_update', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
       clearInterval(interval);
     };
   }, [roomCode]);
@@ -57,6 +70,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const canDeal = isHost || isDealer;
 
   const handleDeal = async () => {
+    if (!canDeal || loadingAction) return;
     try {
       setLoadingAction(true);
       setDealAnimation(true);
@@ -64,6 +78,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
       await refreshState();
       setTimeout(() => setDealAnimation(false), 600);
     } catch (err: any) {
+      setDealAnimation(false);
       alert(err.message);
     } finally {
       setLoadingAction(false);
@@ -71,13 +86,15 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   };
 
   const handleNewRound = async () => {
+    if (!canDeal || loadingAction) return;
     try {
       setLoadingAction(true);
       setDealAnimation(true);
-      await GameService.newRound(roomCode);
+      await GameService.newRound(roomCode, room?.roundNumber);
       await refreshState();
       setTimeout(() => setDealAnimation(false), 600);
     } catch (err: any) {
+      setDealAnimation(false);
       alert(err.message);
     } finally {
       setLoadingAction(false);
@@ -91,6 +108,13 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
     }
   };
 
+  if (loadError) {
+    return <div className="min-h-screen felt-bg flex flex-col items-center justify-center gap-4 p-6 text-white">
+      <p role="alert">{loadError}</p>
+      <button onClick={refreshState}>Reintentar</button>
+      <button onClick={() => { clearLocalSession(); onLeave(); }}>Volver al inicio</button>
+    </div>;
+  }
   if (!room || !myPlayer) {
     return (
       <div className="flex flex-col min-h-screen items-center justify-center p-4 felt-bg text-white">
@@ -166,6 +190,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
         {/* Hand View with Hold-to-Reveal */}
         <div className={`w-full transition-opacity duration-300 ${dealAnimation ? 'opacity-20 scale-95' : 'opacity-100 scale-100'}`}>
           <Hand
+            key={room.roundNumber}
             cards={myHand}
             playerName={myPlayer.name}
             isCurrentUser={true}
@@ -180,7 +205,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
           {room.status === 'waiting' ? (
             <button
               onClick={handleDeal}
-              disabled={loadingAction}
+              disabled={loadingAction || !canDeal || players.length !== room.maxPlayers}
               className={`w-full py-4 rounded-2xl font-black text-lg tracking-wide shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
                 canDeal
                   ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-amber-500/20 hover:from-amber-400'
@@ -193,7 +218,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
           ) : (
             <button
               onClick={handleNewRound}
-              disabled={loadingAction}
+              disabled={loadingAction || !canDeal}
               className={`w-full py-4 rounded-2xl font-black text-lg tracking-wide shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
                 canDeal
                   ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20 border border-emerald-400/40'

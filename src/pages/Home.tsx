@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameService } from '../services/gameService';
+import { isSupabaseConfigured } from '../services/supabase';
 import { Users, Sparkles, ArrowRight, Dices, Layers } from 'lucide-react';
 
 interface HomeProps {
   onRoomCreated: (code: string) => void;
   onRoomJoined: (code: string) => void;
+  initialRoomCode?: string;
 }
 
-export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined }) => {
+export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initialRoomCode = '' }) => {
   const [view, setView] = useState<'main' | 'create' | 'join'>('main');
   const [hostName, setHostName] = useState('');
   const [maxPlayers, setMaxPlayers] = useState<2 | 4 | 6>(4);
@@ -15,6 +17,9 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined }) => {
   const [roomCode, setRoomCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (initialRoomCode) { setRoomCode(initialRoomCode); setView('join'); }
+  }, [initialRoomCode]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +91,9 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined }) => {
 
       {/* Main Switcher */}
       <div className="my-auto w-full">
+        {!isSupabaseConfigured && <p className="mb-4 text-center text-xs text-amber-200" role="status">
+          Demo local: las mesas solo funcionan en este navegador. Configurá Supabase para conectar celulares.
+        </p>}
         {error && (
           <div className="mb-4 p-3 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs text-center backdrop-blur-sm">
             {error}
@@ -151,6 +159,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined }) => {
                 required
                 placeholder="Ej. Lucas"
                 value={hostName}
+                maxLength={30}
                 onChange={(e) => setHostName(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-black/40 border border-stone-700 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 font-medium"
               />
@@ -240,6 +249,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined }) => {
                 required
                 placeholder="Ej. Juan"
                 value={joinName}
+                maxLength={30}
                 onChange={(e) => setJoinName(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-black/40 border border-stone-700 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 font-medium"
               />
@@ -266,7 +276,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined }) => {
       {/* Footer disclaimer */}
       <div className="py-4 text-center text-[11px] text-stone-400">
         <p>“La aplicación reparte. Los jugadores juegan.”</p>
-        <p className="mt-1 text-stone-500">Sin registro · Sin anuncios · Privacidad garantizada</p>
+        <p className="mt-1 text-stone-500">Sin registro · Sin anuncios · Cartas ocultas al soltar</p>
       </div>
     </div>
   );

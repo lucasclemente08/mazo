@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card as CardType } from '../../types';
 import { Card } from '../Card/Card';
 import { Eye, EyeOff, Shield } from 'lucide-react';
@@ -15,6 +15,17 @@ export const Hand: React.FC<HandProps> = ({
   isCurrentUser = true,
 }) => {
   const [revealed, setRevealed] = useState(false);
+  const handKey = cards.map((card) => card.id).join(',');
+  useEffect(() => { setRevealed(false); }, [handKey]);
+  useEffect(() => {
+    const hide = () => setRevealed(false);
+    window.addEventListener('blur', hide);
+    document.addEventListener('visibilitychange', hide);
+    return () => {
+      window.removeEventListener('blur', hide);
+      document.removeEventListener('visibilitychange', hide);
+    };
+  }, []);
 
   // Handlers for hold-to-reveal (touch & mouse)
   const startReveal = (e: React.SyntheticEvent) => {
@@ -71,12 +82,19 @@ export const Hand: React.FC<HandProps> = ({
         <div className="w-full px-4 mt-2">
           <button
             type="button"
-            onMouseDown={startReveal}
-            onMouseUp={endReveal}
-            onMouseLeave={endReveal}
-            onTouchStart={startReveal}
-            onTouchEnd={endReveal}
-            onTouchCancel={endReveal}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              startReveal(e);
+            }}
+            onPointerUp={endReveal}
+            onPointerLeave={endReveal}
+            onPointerCancel={endReveal}
+            onLostPointerCapture={endReveal}
+            onBlur={endReveal}
+            onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') startReveal(e); }}
+            onKeyUp={endReveal}
+            style={{ touchAction: 'none' }}
             className={`w-full py-3.5 px-6 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all duration-150 shadow-lg active:scale-95 select-none ${
               revealed
                 ? 'bg-amber-500 text-stone-950 shadow-amber-500/30'
@@ -96,7 +114,7 @@ export const Hand: React.FC<HandProps> = ({
             )}
           </button>
           <p className="text-center text-[11px] text-stone-400 mt-2">
-            Nadie a tu alrededor podrá espiar tus cartas por accidente.
+            Las cartas se ocultan al soltar o cambiar de pestaña.
           </p>
         </div>
       )}
