@@ -26,7 +26,7 @@ export function Scoreboard({ room, players, isHost, disabled, onUpdate }: Props)
     catch (err) { setError(err instanceof Error ? err.message : 'No se pudieron guardar los puntos.'); }
     finally { setBusy(false); }
   };
-  return <section aria-label="Anotador de puntos" className="rounded-2xl border border-amber-300/20 bg-stone-950/70 p-4">
+  return <section aria-label="Anotador de puntos" className="scoreboard rounded-2xl border border-amber-300/20 bg-stone-950/70 p-4">
     <div className="flex items-center justify-between gap-3 mb-4">
       <h2 className="font-semibold text-amber-100">Anotador</h2>
       <div className="flex items-center gap-2 text-xs">
@@ -39,17 +39,19 @@ export function Scoreboard({ room, players, isHost, disabled, onUpdate }: Props)
     <div className={`grid ${individual ? 'grid-cols-3' : 'grid-cols-2'} divide-x divide-stone-700`}>
       {slots.map(team => <div key={team} className={`text-center ${individual ? 'px-1' : team === 0 ? 'pr-3' : 'pl-3'}`}>
         <h3 className="text-sm font-semibold text-stone-200">{label(team)}</h3>
-        <p className="text-[11px] text-stone-400 min-h-8 break-words">{players.filter(p => individual ? p.position === team : p.position % 2 === team).map(p => p.name).join(' · ') || 'Esperando jugadores'}</p>
+        <p className="text-[11px] text-stone-400 min-h-8 break-words">{individual ? 'Individual' : players.filter(p => p.position % 2 === team).map(p => p.name).join(' · ') || 'Esperando jugadores'}</p>
         <p key={scores[team]} className="score-value font-mono text-4xl tabular-nums text-amber-100 my-2" aria-label={`${label(team)}: ${scores[team]} puntos`}>{scores[team]}</p>
         <p className="text-xs text-stone-400 mb-3">{winner === team ? 'Ganó el partido' : limit === 30 ? (scores[team] < 15 ? 'Malas' : 'Buenas') : 'Puntos'}</p>
-        {isHost && <div className="flex justify-center gap-2">
+        <div className="score-track" role="img" aria-label={`${scores[team]} de ${limit} puntos`}><span style={{width: `${Math.min(100, scores[team] / limit * 100)}%`}} /></div>
+        {isHost && <div className="score-actions">
           <button type="button" disabled={busy || disabled || scores[team] < amount} onClick={() => update(team, -amount)}
-            aria-label={`Restar ${amount} puntos a ${label(team)}`} className="min-h-11 px-2 rounded-lg border border-stone-600 text-stone-300 hover:bg-stone-800 disabled:opacity-30">−{amount}</button>
+            aria-label={`Restar ${amount} puntos a ${label(team)}`} className="score-subtract">−{amount}</button>
           <button type="button" disabled={busy || disabled || winner !== -1} onClick={() => update(team, amount)}
-            aria-label={`Sumar ${amount} puntos a ${label(team)}`} className="min-h-11 px-2 rounded-lg bg-amber-400 text-stone-950 font-bold hover:bg-amber-300 disabled:opacity-30">+{amount}</button>
+            aria-label={`Sumar ${amount} puntos a ${label(team)}`} className="score-add"><strong>+{amount}</strong><span>Sumar</span></button>
         </div>}
       </div>)}
     </div>
+    {isHost && <div className="score-presets" aria-label="Elegir cantidad de puntos">{[1, 2, 3, 4].map(value => <button key={value} type="button" disabled={busy || disabled} aria-pressed={amount === value} onClick={() => setAmount(value)}>+{value}</button>)}</div>}
     {isHost ? <label className="flex items-center justify-between gap-3 border-t border-stone-700 pt-3 mt-4 text-xs text-stone-300">
       Puntos por anotación
       <input aria-label="Puntos por anotación" type="number" inputMode="numeric" min={1} max={30} value={amount}

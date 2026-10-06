@@ -48,7 +48,7 @@ export function PlayingTable({ room, players, myId }: { room: Room; players: Pla
     <div className="table-baza-heading"><h3>{history ? `Cartas de la ${displayedTrick + 1}.ª baza` : `Baza ${displayedTrick + 1} de 3`}</h3>
       <span>{result ? result.winner === null ? 'Empate · parda' : 'Terminada' : `${playedCount}/${room.maxPlayers} cartas`}</span>
     </div>
-    <div className={`table-seats ${room.maxPlayers === 6 ? 'table-seats-six' : ''}`}>
+    <div className="table-wood"><div className={`table-seats physical-table table-count-${room.maxPlayers} ${room.maxPlayers === 6 ? 'table-seats-six' : ''}`}>
       {ordered.map(player => {
         const played = play.cards.find(c => c.trick === displayedTrick && c.playerId === player.id);
         const active = !history && !finished && play.turn === player.position;
@@ -58,12 +58,20 @@ export function PlayingTable({ room, players, myId }: { room: Room; players: Pla
         return <article key={player.id} className={`table-seat ${active ? 'table-seat-active' : ''} ${mine ? 'table-seat-mine' : ''}`} aria-label={`${player.name}, ${relation}${active ? ', tiene el turno' : ''}`}>
           <div className="table-seat-name"><span className="table-seat-number" aria-hidden="true">{player.position + 1}</span><h4 title={player.name}>{player.name}</h4></div>
           <p className="table-seat-relation">{relation}{player.position === play.mano ? ' · Mano' : ''}</p>
-          {played ? <div className="table-played-card" key={`${displayedTrick}-${played.card.id}`}><Card card={played.card} className="table-card" /></div>
-            : <div className="table-card-slot" aria-label={active ? 'Esperando su carta' : 'Todavía no jugó'}><span aria-hidden="true">{active ? <ArrowRight /> : '—'}</span><span>{active ? 'Su turno' : 'Sin jugar'}</span></div>}
+          <div className="table-player-hand" aria-label={`Las tres bazas de ${player.name}`}>
+            {[0, 1, 2].map(trick => {
+              const card = play.cards.find(c => c.trick === trick && c.playerId === player.id);
+              return <div key={trick} className={`table-baza-card ${trick === displayedTrick ? 'table-baza-selected' : ''}`}>
+                <small>{trick + 1}.ª</small>
+                {card ? <div className="table-played-card" key={card.card.id}><Card card={card.card} className="table-card" /></div>
+                  : <div className="table-card-slot" aria-label={`${trick + 1}.ª baza: ${finished && trick > play.trick ? 'no se jugó' : 'sin jugar'}`}><span aria-hidden="true">{!finished && trick === play.trick && active ? <ArrowRight /> : '·'}</span></div>}
+              </div>;
+            })}
+          </div>
           <span className={`table-seat-status ${active ? 'table-seat-status-active' : ''}`}>{played ? <><Check aria-hidden="true" /> Ya jugó</> : active ? mine ? 'Tirá tu carta' : 'Está eligiendo' : 'Espera su turno'}</span>
         </article>;
       })}
-    </div>
+    </div></div>
     {result && <p className="table-result">{result.winner === null ? 'Baza empatada: parda.' : `Esta baza la ganó ${sideName(result.winner)}.`}</p>}
     {history ? <button type="button" className="table-return" onClick={() => setViewedTrick(null)}>Volver a la baza actual <ArrowRight aria-hidden="true" /></button>
       : <p className="table-footnote">Todos ven estas cartas. Tus cartas sin jugar quedan privadas abajo.</p>}

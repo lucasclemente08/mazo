@@ -194,3 +194,43 @@ dialog::backdrop { animation: backdrop-enter 220ms ease; }
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   button:not(:disabled):hover, button:not(:disabled):active { transform: none; }
 }
+/* A shared felt surface: every public card stays visible in its player's lane. */
+.table-wood { padding: 10px; border-radius: 48px; background: repeating-linear-gradient(8deg,#62422b 0px,#62422b 3px,#735037 4px,#51351f 8px); box-shadow: inset 0 2px 2px #d4a66b66, inset 0 -5px 8px #20180f,0 12px 28px #03180d66; }
+.physical-table { position: relative; gap: 18px 12px; padding: 24px 10px; border-radius: 38px; border: 2px solid #b69b6755; background: radial-gradient(ellipse at 50% 40%,#396345,#1b422c 65%,#12321f); box-shadow: inset 0 0 28px #061d13aa; }
+.physical-table::before { content: ''; position: absolute; inset: 8px; border: 1px solid #dbca9740; border-radius: 30px; pointer-events: none; }
+.physical-table .table-seat { border: 0; background: transparent; border-radius: 12px; padding: 8px 0; gap: 4px; }
+.physical-table .table-seat-active { background: #eac78412; box-shadow: 0 0 0 1px #eac784aa; }
+.table-player-hand { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; width: 100%; max-width: 200px; }
+.table-baza-card { min-width: 0; text-align: center; }
+.table-baza-card > small { display: block; font-size: 10px; color: #c5d0c5; margin: 4px 0; }
+.table-baza-selected > small { color: #ffe4ae; font-weight: 700; }
+.physical-table .playing-card.table-card,.physical-table .table-card-slot { width: 100%; margin: 0; border-radius: 6px; }
+.physical-table .table-played-card { filter: drop-shadow(1px 4px 3px #061b1580); }
+.physical-table .table-card-slot { background: #09241935; border-color: #bbc9b840; }
+.physical-table .table-card .card-corner span { font-size: 14px; }
+.physical-table .table-card .card-corner svg { width: 7px; height: 10px; }
+.physical-table .table-card .card-art { inset: 21px 7px; }
+.physical-table .table-card .card-pips svg { width: 8px; max-height: 12px; }
+.physical-table .table-card .card-pips-single svg { width: 20px; max-height: 28px; }
+.physical-table .table-card .card-suit-name { display: none; }
+.scoreboard { background: #10281c; border-color: #d7bb7b55; }
+.score-track { height: 5px; background: #d7bb7b18; border-radius: 4px; overflow: hidden; margin: 0 0 14px; }
+.score-track span { display: block; height: 100%; background: #eac784; transition: width .25s ease; }
+.score-actions { display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 6px; }
+.score-actions button { min-height: 52px; border-radius: 12px; transition: background .2s,transform .2s; }
+.score-subtract { border: 1px solid #adc0a855; color: #dce4d7; background: #1e3928; font-size: 15px; }
+.score-add { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #eac784; color: #162a1b; box-shadow: 0 3px 0 #96733d; }
+.score-add strong { font-size: 21px; line-height: 1.1; }
+.score-add span { font-size: 10px; font-weight: 600; }
+.score-add:hover { background: #f3d49a; }
+.score-subtract:hover { background: #34543c; }
+.score-actions button:active { transform: translateY(2px); }
+.score-actions button:disabled { opacity: .4; box-shadow: none; cursor: default; }
+.score-presets { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-top: 20px; }
+.score-presets button { min-height: 44px; border: 1px solid #adc0a840; border-radius: 9px; color: #ced9c8; }
+.score-presets button[aria-pressed='true'] { background: #eac78422; border-color: #eac784; color: #ffe4ae; }
+@media (min-width:380px) { .physical-table.table-seats-six { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width:359px) { .table-wood { padding: 7px; } .physical-table { padding: 18px 8px; gap: 14px 8px; } .score-actions { grid-template-columns: 32px minmax(0,1fr); gap: 4px; } }
+
+.physical-table.table-count-3 .table-seat:last-child { grid-column: 1 / -1; width: 65%; justify-self: center; }
+
