@@ -4,6 +4,7 @@ import { isSupabaseConfigured } from '../services/supabase';
 import { TrucoGuide } from '../components/TrucoGuide';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { CardsIcon, PlayersIcon, JoinIcon, GuideIcon } from '../components/Icons';
+import { BrandIntro, LearningLinks } from '../seo/SeoPage';
 
 interface HomeProps {
   onRoomCreated: (code: string) => void;
@@ -22,6 +23,8 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
   const [showGuide, setShowGuide] = useState(false);
   useEffect(() => {
     if (initialRoomCode) { setRoomCode(initialRoomCode); setView('join'); }
+    else if (new URLSearchParams(window.location.search).has('crear')) setView('create');
+    else if (new URLSearchParams(window.location.search).has('unirme')) setView('join');
   }, [initialRoomCode]);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -69,16 +72,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
   return (
     <div className="home-shell flex flex-col min-h-screen felt-bg text-white justify-between p-4 sm:p-6 max-w-md mx-auto">
       {/* Header / Brand */}
-      <div className="home-brand flex flex-col items-center text-center">
-        <div className="brand-mark"><CardsIcon /></div>
-
-        <h1 className="text-4xl font-black tracking-tight text-amber-100 uppercase">
-          MAZO
-        </h1>
-        <p className="text-stone-300 text-sm mt-1 max-w-[260px]">
-          La mesa de siempre, en tu celular. Compartí el código y empezá a jugar.
-        </p>
-      </div>
+      <BrandIntro />
 
       {/* Main Switcher */}
       <div className="my-auto w-full">
@@ -271,6 +265,7 @@ export const Home: React.FC<HomeProps> = ({ onRoomCreated, onRoomJoined, initial
         <p>“La aplicación reparte. Los jugadores juegan.”</p>
         <p className="mt-1 text-stone-500">Sin registro · Sin anuncios · Cartas ocultas al soltar</p>
       </div>
+      {view === 'main' && !initialRoomCode && <LearningLinks />}
       {showGuide && <TrucoGuide onClose={() => setShowGuide(false)} />}
     </div>
   );

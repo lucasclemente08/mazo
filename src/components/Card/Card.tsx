@@ -8,7 +8,7 @@ export const SuitIcon: FC<{ suit: Suit; className?: string }> = ({ suit, classNa
   {suit === 'copa' && <><path d="M6 5h20v7c0 7-4 12-10 12S6 19 6 12Z" fill="currentColor" fillOpacity=".18"/><path d="M7 9h18M10 15h12M16 24v10M11 35h10l3 3H8ZM6 11H3v4c0 4 3 6 7 6m16-10h3v4c0 4-3 6-7 6"/></>}
 </svg>;
 export const Card: FC<CardProps> = ({ card, faceDown = false, className = '', onClick, style }) => {
-  if (faceDown || !card) return <div onClick={onClick} style={style} role="img" aria-label="Carta oculta" className={`playing-card card-back ${className}`}><div className="card-back-frame"><span className="card-back-diamond">M</span><span className="card-back-name">MAZO</span></div></div>;
+  if (faceDown || !card) return <div onClick={onClick} style={style} role="img" aria-label="Carta oculta" className={`playing-card card-back ${className}`}><div className="card-back-frame"><span className="card-back-diamond">T</span><span className="card-back-name">TRUCARDO</span></div></div>;
   return <div onClick={onClick} style={style} role="img" aria-label={`${card.value} de ${card.suit}`} className={`playing-card card-face card-suit-${card.suit} ${className}`}>
     <div className="card-corner card-corner-top" aria-hidden="true"><span>{card.value}</span><SuitIcon suit={card.suit} /></div>
     <div className={`card-art ${card.value > 7 ? 'card-art-court' : ''}`} aria-hidden="true">

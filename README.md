@@ -1,6 +1,21 @@
-# 🃏 MAZO
+# 🃏 TRUCARDO
 
 Baraja virtual para jugar Truco presencialmente o desde varios celulares. La aplicación reparte, controla los turnos y resuelve las bazas; los jugadores cantan y anotan los puntos.
+
+## SEO del producto
+
+El dominio canónico es `https://trucardo.sytes.net`. `VITE_SITE_URL` permite cambiarlo al compilar; debe ser un origen HTTPS sin ruta. Vite genera HTML completo para la home y las once páginas públicas, antes de generar el service worker. Las guías no cargan el bundle del juego y pueden leerse sin JavaScript. El contenido SSR y el del navegador comparten componentes y datos.
+
+- `/truco/`: hub de guías.
+- `/truco/como-jugar/`, `/truco/reglas/`, `/truco/cartas/`, `/truco/senas/`, `/truco/envido/`, `/truco/flor/`, `/truco/puntuacion/`: consultas de reglas, con enlaces a crear mesa.
+- `/juegos/` y `/juegos/truco/`: solo juegos realmente disponibles.
+- `/repartir-cartas/`: el reparto de tres cartas para Truco, sin prometer otros juegos.
+- `sitemap.xml`, `robots.txt`, metadatos propios, canonicals, Open Graph, Twitter y JSON-LD de WebSite, WebApplication, Article y BreadcrumbList.
+- `/r/*` y `room.html`: `noindex, nofollow` tanto en HTML como en cabeceras. No se agregan salas al sitemap. Las rutas inexistentes responden 404 en Vercel, en lugar de servir la home.
+
+`npm run test:seo` compila y verifica el HTML sin ejecutar JavaScript. Incluye enlaces internos, unicidad de metadatos, las 40 cartas ilustradas, Envido y exclusión de salas. `scripts/share-card.html` es la fuente editable de la imagen Open Graph de 1200 × 630; la imagen exportada se guarda en `public/og-trucardo.jpg`.
+
+Para Search Console: agregá una propiedad de prefijo de URL para el dominio canónico. Si usás la etiqueta HTML, colocá su token público en `VITE_GOOGLE_SITE_VERIFICATION`, recompilá, verificá la propiedad con tu cuenta y enviá `https://trucardo.sytes.net/sitemap.xml`. No se inventa un token de verificación ni se afirma que Google ya indexó las páginas.
 
 ## Desarrollo
 

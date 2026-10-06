@@ -27,7 +27,7 @@ export const RoomQRCode: React.FC<RoomQRCodeProps> = ({ code, url }) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Mesa de Truco ${code} en MAZO`,
+          title: `Mesa de Truco ${code} en TRUCARDO`,
           text: `Unite a la mesa con el código ${code} para jugar al Truco:`,
           url: roomUrl,
         });
