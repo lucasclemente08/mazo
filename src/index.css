@@ -234,3 +234,29 @@ dialog::backdrop { animation: backdrop-enter 220ms ease; }
 
 .physical-table.table-count-3 .table-seat:last-child { grid-column: 1 / -1; width: 65%; justify-self: center; }
 
+.table-mode-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; padding: 14px 0 0; }
+.table-mode-toolbar button { display: flex; align-items: center; gap: 8px; padding: 10px 14px; min-height: 44px; border: 1px solid #eac78480; border-radius: 12px; background: #eac78418; color: #f3d49a; font-size: 13px; font-weight: 650; }
+.table-mode-toolbar button svg { width: 17px; height: 17px; }
+.table-mode-toolbar > span { font-size: 11px; color: #bbc9b8; }
+.game-room-table-mode { max-width: 1280px; min-height: 100dvh; }
+.game-room-table-mode .game-stage { display: grid; grid-template-columns: minmax(0,1fr); align-items: start; gap: 16px; margin: 0; }
+.game-room-table-mode .playing-table { margin-bottom: 0; }
+.game-room-table-mode .table-mano-help,.game-room-table-mode .table-footnote { display: none; }
+.game-room-table-mode .table-turn { margin-top: 10px; }
+.game-room-table-mode .table-tricks { margin: 10px 0; }
+.game-room-table-mode .game-hand { position: sticky; bottom: 8px; z-index: 10; padding: 14px 4px; border-radius: 20px; background: #10281cf5; border: 1px solid #d7bb7b70; box-shadow: 0 -6px 25px #061d1399; }
+.player-hand-table-mode > div:nth-child(2) { padding: 8px 0; }
+.player-hand-table-mode .playing-card { width: clamp(64px,20vw,100px); }
+.player-hand-table-mode h2 { font-size: 16px; }
+.game-room-table-mode footer { width: 100%; max-width: 600px; margin: 0 auto; }
+@media (min-width: 800px) {
+ .game-room-table-mode .game-stage { grid-template-columns: minmax(0,1fr) 320px; }
+ .game-room-table-mode .game-hand { top: 20px; bottom: auto; }
+ .game-room-table-mode .physical-table { padding: 30px 20px; gap: 30px 24px; }
+ .game-room-table-mode .table-player-hand { max-width: 270px; gap: 8px; }
+ .game-room-table-mode .table-seat-name h4 { font-size: 16px; }
+ .game-room-table-mode .table-card .card-corner span { font-size: 20px; }
+ .game-room-table-mode .table-card .card-art { inset: 28px 12px; }
+ .game-room-table-mode .table-card .card-pips svg { width: 12px; max-height: 18px; }
+ .game-room-table-mode .table-card .card-pips-single svg { width: 28px; max-height: 40px; }
+}

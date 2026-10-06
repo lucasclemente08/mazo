@@ -11,19 +11,20 @@ interface HandProps {
   canPlay?: boolean;
   busy?: boolean;
   onPlay?: (card: CardType) => Promise<void>;
+  tableMode?: boolean;
 }
 
 export const Hand: React.FC<HandProps> = ({
   cards,
   playerName,
   isCurrentUser = true,
-  canPlay = false, busy = false, onPlay,
+  canPlay = false, busy = false, onPlay, tableMode = false,
 }) => {
   const [revealed, setRevealed] = useState(false);
   const [choosing, setChoosing] = useState(false);
   const [selected, setSelected] = useState<CardType | null>(null);
   const handKey = cards.map((card) => card.id).join(',');
-  useEffect(() => { setRevealed(false); setChoosing(false); setSelected(null); }, [handKey, canPlay]);
+  useEffect(() => { setRevealed(false); setChoosing(false); setSelected(null); }, [handKey, canPlay, tableMode]);
   useEffect(() => {
     const hide = () => { setRevealed(false); setChoosing(false); setSelected(null); };
     window.addEventListener('blur', hide);
@@ -45,7 +46,7 @@ export const Hand: React.FC<HandProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-md mx-auto">
+    <div className={`player-hand flex flex-col items-center w-full max-w-md mx-auto ${tableMode ? 'player-hand-table-mode' : ''}`}>
       {/* Hand header / privacy alert */}
       <div className="flex items-center justify-between w-full px-4 mb-3">
         <div className="flex items-center gap-2">
@@ -78,7 +79,7 @@ export const Hand: React.FC<HandProps> = ({
                   : `rotate(${(idx - 1) * 2}deg)`,
               }}
             >
-              {choosing ? <button type="button" disabled={busy} onClick={() => setSelected(card)}
+              {choosing ? <button type="button" disabled={busy || !canPlay} onClick={() => setSelected(card)}
                 aria-label={`Elegir ${card.value} de ${card.suit}`} aria-pressed={selected?.id === card.id}
                 className={`rounded-xl transition-transform hover:-translate-y-2 focus-visible:outline focus-visible:outline-amber-300 ${selected?.id === card.id ? 'ring-4 ring-amber-400 -translate-y-2' : ''}`}>
                 <Card card={card} />
@@ -89,7 +90,7 @@ export const Hand: React.FC<HandProps> = ({
       </div>
 
       {/* Privacy Hold-to-Reveal trigger */}
-      {cards.length > 0 && isCurrentUser && !choosing && (
+      {cards.length > 0 && isCurrentUser && !choosing && !tableMode && (
         <div className="w-full px-4 mt-2">
           <button
             type="button"
@@ -129,14 +130,14 @@ export const Hand: React.FC<HandProps> = ({
           </p>
         </div>
       )}
-      {cards.length > 0 && onPlay && canPlay && <div className="w-full px-4 mt-3 space-y-2">
+      {cards.length > 0 && onPlay && (canPlay || tableMode) && <div className="w-full px-4 mt-3 space-y-2">
         {!choosing ? <button type="button" disabled={busy} onClick={() => { setChoosing(true); setRevealed(false); }}
-          className="w-full min-h-12 py-3 rounded-xl bg-amber-500 text-stone-950 font-bold hover:bg-amber-400">Ver y elegir carta</button>
-          : <><p className="text-center text-sm text-amber-100">Tocá una carta y confirmá para tirarla a la mesa.</p>
+          className="w-full min-h-12 py-3 rounded-xl bg-amber-500 text-stone-950 font-bold hover:bg-amber-400">{canPlay ? 'Ver y elegir carta' : 'Ver mis cartas'}</button>
+          : <><p className="text-center text-sm text-amber-100">{canPlay ? 'Tocá una carta y confirmá para tirarla a la mesa.' : 'Esperá tu turno para tirar. Podés mirar tus cartas.'}</p>
             <div className="flex gap-2"><button type="button" disabled={busy} onClick={() => { setChoosing(false); setSelected(null); }}
               className="flex-1 min-h-12 rounded-xl border border-stone-600 hover:bg-stone-800">Ocultar / cancelar</button>
-            <button type="button" disabled={!selected || busy} onClick={async () => {
-              if (selected) { const card = selected; setChoosing(false); setSelected(null); await onPlay(card); }
+            <button type="button" disabled={!selected || busy || !canPlay} onClick={async () => {
+              if (selected && canPlay) { const card = selected; setChoosing(false); setSelected(null); await onPlay(card); }
             }} className="flex-1 min-h-12 rounded-xl bg-amber-500 text-stone-950 font-bold hover:bg-amber-400 disabled:opacity-40">{busy ? 'Tirando…' : 'Tirar carta'}</button></div></>}
       </div>}
     </div>

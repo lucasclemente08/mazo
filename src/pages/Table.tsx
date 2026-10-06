@@ -9,7 +9,7 @@ import { PlayerList } from '../components/PlayerList/PlayerList';
 import { ShareRoomDialog } from '../components/QRCode/ShareRoomDialog';
 import { Scoreboard } from '../components/Scoreboard';
 import { TrucoGuide } from '../components/TrucoGuide';
-import { Play, RotateCcw, QrCode, ArrowLeft, Users, RefreshCw } from 'lucide-react';
+import { Play, RotateCcw, QrCode, ArrowLeft, Users, RefreshCw, Maximize2, Minimize2 } from 'lucide-react';
 
 interface TableProps {
   roomCode: string;
@@ -27,6 +27,12 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+  const [tableMode, setTableMode] = useState(false);
+  useEffect(() => {
+    const exitMode = (event: KeyboardEvent) => { if (event.key === 'Escape') setTableMode(false); };
+    window.addEventListener('keydown', exitMode);
+    return () => window.removeEventListener('keydown', exitMode);
+  }, []);
 
   const session = getLocalSession();
 
@@ -158,7 +164,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen felt-bg text-white justify-between p-4 sm:p-6 max-w-lg mx-auto">
+    <div className={`game-room flex flex-col min-h-screen felt-bg text-white justify-between p-4 sm:p-6 max-w-lg mx-auto ${tableMode ? 'game-room-table-mode' : ''}`}>
       {/* Top Bar Navigation */}
       <header className="flex items-center justify-between pb-3 border-b border-white/10">
         <div className="flex items-center gap-2">
@@ -197,8 +203,13 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
         </div>
       </header>
 
+      {room.status === 'playing' && <div className="table-mode-toolbar"><button type="button" aria-pressed={tableMode} onClick={() => setTableMode(value => !value)}>
+        {tableMode ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
+        {tableMode ? 'Volver a vista normal' : 'Modo mesa · ampliar y jugar'}
+      </button><span>{tableMode ? 'Tus cartas y la mesa en una misma vista' : 'Más espacio para las cartas'}</span></div>}
+
       {/* Main Game Stage */}
-      <main className="my-auto py-4 flex flex-col items-center justify-center w-full">
+      <main className="game-stage my-auto py-4 flex flex-col items-center justify-center w-full">
         {room.status === 'waiting' && (
           <div className="w-full flex flex-col items-center text-center space-y-4 my-4">
             <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-amber-300">
@@ -226,7 +237,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
         {room.maxPlayers === 3 && <p className="mb-3 text-center text-xs text-amber-200">Gallo: {players.find(p => p.position === room.dealerPosition)?.name || 'Esperando'} juega solo esta mano. Puntos individuales.</p>}
         {/* Hand View with Hold-to-Reveal */}
         {room.status === 'playing' && <PlayingTable room={room} players={players} myId={myPlayer.id} />}
-        <div className={`hand-transition w-full ${dealAnimation ? 'opacity-20 scale-95' : 'opacity-100 scale-100'}`}>
+        <div className={`hand-transition game-hand w-full ${dealAnimation ? 'opacity-20 scale-95' : 'opacity-100 scale-100'}`}>
           <Hand
             key={room.roundNumber}
             cards={myHand}
@@ -235,9 +246,10 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
             canPlay={!matchEnded && room.play?.turn === myPlayer.position}
             busy={loadingAction}
             onPlay={room.status === 'playing' ? handlePlay : undefined}
+            tableMode={tableMode}
           />
         </div>
-        {room.status === 'playing' && room.play?.turn !== myPlayer.position && room.play?.winner === null && !matchEnded && <div className="mt-4"><WaitingPhrase /></div>}
+        {room.status === 'playing' && room.play?.turn !== myPlayer.position && room.play?.winner === null && !matchEnded && !tableMode && <div className="mt-4"><WaitingPhrase /></div>}
       </main>
 
       {/* Bottom Controls / Seating list */}
