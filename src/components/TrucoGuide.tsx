@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { GuideCard } from './GuideCard';
-import type { Suit } from '../types';
+import type { Suit, CardValue } from '../types';
 
 const ranking = ['1 de espada', '1 de basto', '7 de espada', '7 de oro', 'Todos los 3', 'Todos los 2', '1 de oro y copa', 'Todos los 12', 'Todos los 11', 'Todos los 10', '7 de basto y copa', 'Todos los 6', 'Todos los 5', 'Todos los 4'];
 const suits: Suit[] = ['espada', 'basto', 'oro', 'copa'];
-const rankCards: [number, Suit[]][] = [[1,['espada']],[1,['basto']],[7,['espada']],[7,['oro']],[3,suits],[2,suits],[1,['oro','copa']],[12,suits],[11,suits],[10,suits],[7,['basto','copa']],[6,suits],[5,suits],[4,suits]];
-const examples: { cards: [number, Suit][]; calculation: string; total: number; note: string }[] = [
+const rankCards: [CardValue, Suit[]][] = [[1,['espada']],[1,['basto']],[7,['espada']],[7,['oro']],[3,suits],[2,suits],[1,['oro','copa']],[12,suits],[11,suits],[10,suits],[7,['basto','copa']],[6,suits],[5,suits],[4,suits]];
+const examples: { cards: [CardValue, Suit][]; calculation: string; total: number; note: string }[] = [
   {cards:[[7,'oro'],[6,'oro']],calculation:'20 + 7 + 6',total:33,note:'Mismo palo · el máximo'},
   {cards:[[12,'copa'],[5,'copa']],calculation:'20 + 0 + 5',total:25,note:'La figura vale cero'},
   {cards:[[10,'espada'],[11,'espada']],calculation:'20 + 0 + 0',total:20,note:'Dos figuras del mismo palo'},

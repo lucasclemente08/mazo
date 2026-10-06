@@ -58,6 +58,45 @@ dialog::backdrop { animation: backdrop-enter 220ms ease; }
 .hand-transition { transition: opacity 300ms ease, transform 300ms var(--motion-ease); }
 .error-notice { animation: view-enter 200ms ease; }
 .playing-card { width: clamp(76px, 27vw, 128px); }
+.card-face, .card-back { position: relative; aspect-ratio: 5 / 8; border-radius: 10px; box-shadow: 0 10px 22px #03170d66, 0 2px 3px #03170d66; overflow: hidden; }
+.card-face { background: radial-gradient(ellipse at 40% 30%, #fffdf5, #efe8d5); border: 1px solid #d0c4a7; color: #254d38; }
+.card-face::before { content: ''; position: absolute; inset: 5px; border: 1px solid #bba97a55; border-radius: 6px; pointer-events: none; }
+.card-suit-oro { color: #926719; }
+.card-suit-copa { color: #a04d40; }
+.card-suit-espada { color: #365f77; }
+.card-corner { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.card-corner span { font: bold clamp(20px, 6vw, 27px)/1 Georgia, serif; letter-spacing: -.06em; }
+.card-corner svg { width: 13px; height: 17px; margin-top: 2px; }
+.card-corner-top { top: 8px; left: 8px; }
+.card-corner-bottom { right: 8px; bottom: 8px; transform: rotate(180deg); }
+.card-art { position: absolute; inset: 30px 25% 27px; display: flex; align-items: center; justify-content: center; }
+.card-pips { display: grid; grid-template-columns: repeat(2, 1fr); justify-items: center; align-items: center; gap: 3px 5px; width: 100%; height: 100%; }
+.card-pips svg { width: 19px; max-height: 23px; }
+.card-pips svg:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.card-pips-single { display: flex; justify-content: center; }
+.card-pips-single svg { width: 38px; max-height: 54px; }
+.card-art-court { inset: 25px 22% 28px; flex-direction: column; gap: 3px; border: 1px solid currentColor; border-radius: 40% 40% 6px 6px; background: #e1d7bb33; }
+.card-art-court svg { width: 28px; height: 35px; }
+.card-court-crown { font-size: 23px; line-height: 1; }
+.card-court-name { font: 9px Georgia, serif; }
+.card-suit-name { position: absolute; bottom: 10px; left: 8px; font-size: 7px; text-transform: uppercase; letter-spacing: .05em; }
+.card-back { background: repeating-linear-gradient(45deg, #ddbc7310 0 1px, transparent 1px 8px), repeating-linear-gradient(-45deg, #ddbc7310 0 1px, transparent 1px 8px), #173d2c; border: 1px solid #d8b773; }
+.card-back-frame { position: absolute; inset: 7px; border: 1px solid #ddbc7366; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+.card-back-diamond { width: 36px; height: 36px; border: 1px solid #ddbc73; transform: rotate(45deg); display: grid; place-items: center; color: #eddaaf; font: 24px Georgia, serif; background: #173d2c; }
+.card-back-name { color: #eddaaf; font: bold 11px Georgia, serif; letter-spacing: .18em; }
+.playing-card.guide-playing-card { width: 62px; flex-shrink: 0; }
+.guide-playing-card .card-corner span { font-size: 16px; }
+.guide-playing-card .card-corner svg { width: 8px; height: 10px; margin-top: 1px; }
+.guide-playing-card .card-corner-top { top: 6px; left: 6px; }
+.guide-playing-card .card-corner-bottom { bottom: 6px; right: 6px; }
+.guide-playing-card .card-art { inset: 21px 24% 20px; }
+.guide-playing-card .card-pips { gap: 1px 2px; }
+.guide-playing-card .card-pips svg { width: 10px; max-height: 13px; }
+.guide-playing-card .card-pips-single svg { width: 24px; max-height: 36px; }
+.guide-playing-card .card-art-court svg { width: 17px; height: 23px; }
+.guide-playing-card .card-court-crown { font-size: 14px; }
+.guide-playing-card .card-court-name { font-size: 6px; }
+.guide-playing-card .card-suit-name { font-size: 5px; bottom: 7px; left: 6px; }
 .guide-card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; width: 58px; height: 88px; flex-shrink: 0; padding: 6px; border-radius: 8px; background: #faf7ef; border: 1px solid #d9d1be; box-shadow: 0 4px 10px #061c1240; color: #254d38; }
 .guide-card-value { align-self: flex-start; font: bold 20px/1 Georgia, serif; }
 .guide-card-suit { width: 25px; height: 25px; }
