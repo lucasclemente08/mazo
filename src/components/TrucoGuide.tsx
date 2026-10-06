@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { GuideCard } from './GuideCard';
+import type { Suit } from '../types';
 
 const ranking = ['1 de espada', '1 de basto', '7 de espada', '7 de oro', 'Todos los 3', 'Todos los 2', '1 de oro y copa', 'Todos los 12', 'Todos los 11', 'Todos los 10', '7 de basto y copa', 'Todos los 6', 'Todos los 5', 'Todos los 4'];
+const suits: Suit[] = ['espada', 'basto', 'oro', 'copa'];
+const rankCards: [number, Suit[]][] = [[1,['espada']],[1,['basto']],[7,['espada']],[7,['oro']],[3,suits],[2,suits],[1,['oro','copa']],[12,suits],[11,suits],[10,suits],[7,['basto','copa']],[6,suits],[5,suits],[4,suits]];
+const examples: { cards: [number, Suit][]; calculation: string; total: number; note: string }[] = [
+  {cards:[[7,'oro'],[6,'oro']],calculation:'20 + 7 + 6',total:33,note:'Mismo palo · el máximo'},
+  {cards:[[12,'copa'],[5,'copa']],calculation:'20 + 0 + 5',total:25,note:'La figura vale cero'},
+  {cards:[[10,'espada'],[11,'espada']],calculation:'20 + 0 + 0',total:20,note:'Dos figuras del mismo palo'},
+  {cards:[[7,'oro'],[3,'copa'],[12,'basto']],calculation:'Solo cuenta el 7',total:7,note:'Tres palos distintos'},
+];
 const bids = [
   ['Sin cantar Truco', '1', '—'], ['Truco', '2', '1'], ['Retruco', '3', '2'], ['Vale cuatro', '4', '3'],
   ['Envido', '2', '1'], ['Real envido', '3', '1'], ['Envido + Envido', '4', '2'],
@@ -53,7 +63,10 @@ export function TrucoGuide({ onClose }: { onClose: () => void }) {
       </>}
       {section === 'truco' && <>
         <section><h3 className="text-lg text-amber-100 font-semibold mb-2">De mayor a menor</h3><p>El número impreso no determina la fuerza. Las cartas de una misma fila empatan entre sí.</p></section>
-        <ol className="space-y-0">{ranking.map((card, index) => <li key={card} className="flex items-center gap-4 py-2 border-b border-stone-800"><span className="w-6 text-right font-mono text-stone-500">{index + 1}</span><span className={index < 4 ? 'text-amber-200 font-semibold' : ''}>{card}</span>{index === 0 && <span className="ml-auto text-xs text-amber-300">La más fuerte</span>}</li>)}</ol>
+        <ol className="space-y-4">{ranking.map((card, index) => <li key={card} className="border-b border-stone-700/60 pb-4">
+          <div className="flex items-center gap-2 mb-2"><span className="text-xs font-mono text-stone-400">{String(index + 1).padStart(2, '0')}</span><span className={index < 4 ? 'text-amber-200 font-semibold' : 'text-stone-200'}>{card}</span>{index === 0 && <span className="ml-auto text-[10px] text-amber-300">La más fuerte</span>}</div>
+          <div className="flex gap-2 flex-wrap">{rankCards[index][1].map(suit => <GuideCard key={suit} value={rankCards[index][0]} suit={suit} />)}</div>
+        </li>)}</ol>
         <p>Sin canto, la mano vale 1 punto. Truco querido vale 2; Retruco, 3; Vale cuatro, 4. Si no se acepta, se cobra el escalón anterior: 1, 2 o 3 respectivamente.</p>
       </>}
       {section === 'envido' && <>
@@ -65,12 +78,11 @@ export function TrucoGuide({ onClose }: { onClose: () => void }) {
         </section>
         <section><h3 className="text-lg text-amber-100 font-semibold mb-2">Cómo contar</h3>
           <p>Con dos cartas del mismo palo: sumá sus valores y agregá 20. Con tres del mismo palo y sin Flor: elegí las dos que más suman. Con tres palos distintos: cuenta solo el mayor valor, sin agregar 20.</p>
-          <div className="mt-3 space-y-2 border-l-2 border-amber-400 pl-3">
-            <p>7 y 6 de oro → 20 + 7 + 6 = <strong className="text-amber-200">33</strong>, el máximo.</p>
-            <p>12 y 5 de copa → 20 + 0 + 5 = <strong className="text-amber-200">25</strong>.</p>
-            <p>10 y 11 de espada → <strong className="text-amber-200">20</strong>.</p>
-            <p>7 de oro, 3 de copa y 12 de basto → <strong className="text-amber-200">7</strong>.</p>
-          </div>
+          <div className="mt-4 space-y-3">{examples.map(example => <figure key={example.total} className="rounded-2xl bg-stone-900 border border-stone-700 p-3">
+            <figcaption className="text-xs text-stone-300 mb-3">{example.note}</figcaption>
+            <div className="flex flex-wrap items-center gap-2">{example.cards.map(([value,suit]) => <GuideCard key={`${value}-${suit}`} value={value} suit={suit} />)}</div>
+            <p className="flex items-center justify-between gap-2 mt-3 text-sm"><span>{example.calculation}</span><strong className="text-2xl text-amber-200 tabular-nums">{example.total}<span className="ml-1 text-xs font-normal">puntos</span></strong></p>
+          </figure>)}</div>
         </section>
         <section><h3 className="text-lg text-amber-100 font-semibold mb-2">Cuándo cantarlo</h3>
           <p>Cantalo en la primera baza, antes de jugar tu primera carta. El Envido tiene prioridad si responden a un Truco con Envido. Con «quiero», se comparan los tantos: gana el mayor; ante empate, quien está primero en el orden desde la mano. El ganador debe mostrar sus cartas para comprobarlos.</p>

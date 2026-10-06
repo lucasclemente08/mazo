@@ -58,6 +58,13 @@ dialog::backdrop { animation: backdrop-enter 220ms ease; }
 .hand-transition { transition: opacity 300ms ease, transform 300ms var(--motion-ease); }
 .error-notice { animation: view-enter 200ms ease; }
 .playing-card { width: clamp(76px, 27vw, 128px); }
+.guide-card { display: flex; flex-direction: column; align-items: center; justify-content: space-between; width: 58px; height: 88px; flex-shrink: 0; padding: 6px; border-radius: 8px; background: #faf7ef; border: 1px solid #d9d1be; box-shadow: 0 4px 10px #061c1240; color: #254d38; }
+.guide-card-value { align-self: flex-start; font: bold 20px/1 Georgia, serif; }
+.guide-card-suit { width: 25px; height: 25px; }
+.guide-card-label { font-size: 8px; letter-spacing: .03em; text-transform: uppercase; }
+.guide-card-oro { color: #8c6935; }
+.guide-card-copa { color: #984b43; }
+.guide-card-espada { color: #397097; }
 @media (hover: hover) and (pointer: fine) {
   button:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 18px #03170d40; }
   button:not(:disabled):hover svg { transform: translateY(-1px); }
