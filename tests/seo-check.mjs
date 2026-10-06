@@ -52,7 +52,8 @@ test('Rooms and missing pages are noindex and have no marketing canonical; sitem
  }
  assert(!sitemap.includes('/r/'));
  const config=JSON.parse(readFileSync('vercel.json','utf8'));
- assert(config.headers.some(h=>h.source==='/r/:path*'&&h.headers.some(v=>v.key==='X-Robots-Tag'&&v.value.includes('noindex'))));
+ assert(config.headers.some(h=>h.source==='/r/:code/'&&h.headers.some(v=>v.key==='X-Robots-Tag'&&v.value.includes('noindex'))));
+ assert(config.rewrites.some(r=>r.source==='/r/:code/'&&r.destination==='/room.html'),'Room rewrite must include the slash enforced by Vercel');
  assert(!config.rewrites.some(r=>r.source==='/(.*)'),'Unknown URLs must return an actual 404');
  assert(readFileSync(resolve(dist,'robots.txt'),'utf8').includes(origin+'/sitemap.xml'));
  // The JPEG must have the JPEG signature, instead of being mislabeled PNG.

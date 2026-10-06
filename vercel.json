@@ -5,11 +5,11 @@
   "outputDirectory": "dist",
   "trailingSlash": true,
   "headers": [
-    { "source": "/r/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/r/:code/", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
     { "source": "/room.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
     { "source": "/404.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
   ],
   "rewrites": [
-    { "source": "/r/:code", "destination": "/room.html" }
+    { "source": "/r/:code/", "destination": "/room.html" }
   ]
 }
