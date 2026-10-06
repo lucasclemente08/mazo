@@ -20,6 +20,11 @@ alter table public.rooms add column if not exists score_a integer not null defau
 alter table public.rooms add column if not exists score_b integer not null default 0 check (score_b >= 0);
 alter table public.rooms add column if not exists score_limit integer not null default 30 check (score_limit in (15,30));
 alter table public.rooms add column if not exists score_version integer not null default 0;
+-- Only the current hand is kept; reset on every deal and cascade on room deletion.
+alter table public.rooms add column if not exists play jsonb;
+update public.rooms set play = jsonb_build_object('version',0,'mano',(dealer_position+1)%max_players,
+ 'turn',(dealer_position+1)%max_players,'trick',0,'cards','[]'::jsonb,'results','[]'::jsonb,'winner',null)
+ where status = 'playing' and play is null;
 create index if not exists rooms_expiry on public.rooms(expires_at);
 create unique index if not exists players_room_owner on public.players(room_id,auth_user_id);
 create index if not exists players_owner on public.players(auth_user_id);
@@ -52,11 +57,13 @@ begin
  return jsonb_build_object(
   'room',jsonb_build_object('id',r.id,'code',r.code,'hostPlayerId',r.host_player_id,'status',r.status,
    'maxPlayers',r.max_players,'dealerPosition',r.dealer_position,'roundNumber',r.round_number,'gameType','truco','createdAt',r.created_at,
-   'scores',case when r.max_players = 3 then jsonb_build_array(r.score_a,r.score_b,r.score_c) else jsonb_build_array(r.score_a,r.score_b) end,'scoreLimit',r.score_limit,'scoreVersion',r.score_version),
+   'scores',case when r.max_players = 3 then jsonb_build_array(r.score_a,r.score_b,r.score_c) else jsonb_build_array(r.score_a,r.score_b) end,'scoreLimit',r.score_limit,'scoreVersion',r.score_version,'play',r.play),
   'players',coalesce((select jsonb_agg(jsonb_build_object('id',s.id,'roomId',s.room_id,'name',s.name,
    'position',s.position,'connected',s.connected,'createdAt',s.created_at) order by s.position)
    from public.players s where s.room_id = r.id),'[]'::jsonb),
-  'myHand',coalesce((select h.cards from public.hands h where h.room_id = r.id and h.player_id = p.id
+  'myHand',coalesce((select (select coalesce(jsonb_agg(c.value),'[]'::jsonb) from jsonb_array_elements(h.cards) c
+    where not exists(select 1 from jsonb_array_elements(coalesce(r.play->'cards','[]'::jsonb)) played where played->'card'->>'id' = c.value->>'id'))
+   from public.hands h where h.room_id = r.id and h.player_id = p.id
    and h.round_number = r.round_number),'[]'::jsonb));
 end $$;
 
@@ -140,8 +147,74 @@ begin
    values(r.id,p.id,r.round_number,jsonb_build_array(deck[card_offset+1],deck[card_offset+total+1],deck[card_offset+2*total+1]));
   card_offset := card_offset + 1;
  end loop;
- update public.rooms set status = 'playing',round_number = r.round_number,dealer_position = r.dealer_position where id = r.id;
+ update public.rooms set status = 'playing',round_number = r.round_number,dealer_position = r.dealer_position,
+  play = jsonb_build_object('version',0,'mano',(r.dealer_position+1)%total,'turn',(r.dealer_position+1)%total,
+   'trick',0,'cards','[]'::jsonb,'results','[]'::jsonb,'winner',null) where id = r.id;
 end $$;
+
+create or replace function public.mazo_card_rank(card jsonb) returns integer
+language sql immutable set search_path = '' as $$
+ select case when card->>'id' = '1-espada' then 14 when card->>'id' = '1-basto' then 13
+ when card->>'id' = '7-espada' then 12 when card->>'id' = '7-oro' then 11
+ else case (card->>'value')::integer when 3 then 10 when 2 then 9 when 1 then 8 when 12 then 7
+ when 11 then 6 when 10 then 5 when 7 then 4 when 6 then 3 when 5 then 2 when 4 then 1 end end
+$$;
+revoke all on function public.mazo_card_rank(jsonb) from public,anon,authenticated;
+
+create or replace function public.mazo_play_card(room_code text,card_id text,expected_round integer,expected_version integer) returns void
+language plpgsql security definer set search_path = '' as $$
+declare r public.rooms; actor public.players; card jsonb; state jsonb; played jsonb; trick_cards jsonb; results jsonb;
+ trick integer; highest integer; winner integer; leader integer; first integer; second integer; third integer;
+ round_winner integer; side_count integer; card_count integer;
+begin
+ if auth.uid() is null then raise exception 'Sesión requerida'; end if;
+ select * into r from public.rooms where code = upper(trim(room_code)) and expires_at > now() for update;
+ if not found then raise exception 'La mesa no existe o venció.'; end if;
+ select * into actor from public.players where room_id = r.id and auth_user_id = auth.uid();
+ if not found then raise exception 'No pertenecés a la mesa.'; end if;
+ state := r.play;
+ if r.status <> 'playing' or state is null or state->>'turn' is null or r.score_a >= r.score_limit or r.score_b >= r.score_limit or (r.max_players=3 and r.score_c>=r.score_limit) then
+  raise exception 'La mano terminó.';
+ end if;
+ if expected_round is null or expected_version is null or expected_round <> r.round_number or expected_version <> (state->>'version')::integer then
+  raise exception 'La jugada cambió. Actualizá la mesa.';
+ end if;
+ if actor.position <> (state->>'turn')::integer then raise exception 'Esperá tu turno.'; end if;
+ select c.value into card from public.hands h cross join lateral jsonb_array_elements(h.cards) c
+  where h.room_id=r.id and h.player_id=actor.id and h.round_number=r.round_number and c.value->>'id'=card_id;
+ if card is null or exists(select 1 from jsonb_array_elements(state->'cards') c where c->'card'->>'id'=card_id) then
+  raise exception 'Esa carta no está disponible en tu mano.';
+ end if;
+ trick := (state->>'trick')::integer;
+ played := (state->'cards') || jsonb_build_array(jsonb_build_object('card',card,'playerId',actor.id,'position',actor.position,'trick',trick));
+ state := state || jsonb_build_object('cards',played,'version',expected_version+1,'turn',(actor.position+1)%r.max_players);
+ select jsonb_agg(c.value order by c.ordinality),count(*) into trick_cards,card_count
+  from jsonb_array_elements(played) with ordinality c where (c.value->>'trick')::integer=trick;
+ if card_count=r.max_players then
+  select max(public.mazo_card_rank(c->'card')) into highest from jsonb_array_elements(trick_cards) c;
+  select count(distinct case when r.max_players=3 then case when (c->>'position')::integer=r.dealer_position then 0 else 1 end else (c->>'position')::integer%2 end),
+   min(case when r.max_players=3 then case when (c->>'position')::integer=r.dealer_position then 0 else 1 end else (c->>'position')::integer%2 end)
+   into side_count,winner from jsonb_array_elements(trick_cards) c where public.mazo_card_rank(c->'card')=highest;
+  if side_count>1 then winner:=null; end if;
+  if winner is null then leader:=(trick_cards->0->>'position')::integer;
+  else select (c.value->>'position')::integer into leader from jsonb_array_elements(trick_cards) with ordinality c
+   where public.mazo_card_rank(c.value->'card')=highest order by c.ordinality limit 1;
+  end if;
+  results := (state->'results') || jsonb_build_array(jsonb_build_object('winner',winner,'leader',leader));
+  first := (results->0->>'winner')::integer; second := (results->1->>'winner')::integer; third := (results->2->>'winner')::integer;
+  if jsonb_array_length(results)=2 then
+   if first is not null and (second=first or second is null) then round_winner:=first;
+   elsif first is null and second is not null then round_winner:=second; end if;
+  elsif jsonb_array_length(results)=3 then
+   round_winner:=coalesce(third,first,second,case when r.max_players=3 then case when (state->>'mano')::integer=r.dealer_position then 0 else 1 end else (state->>'mano')::integer%2 end);
+  end if;
+  state := state || jsonb_build_object('results',results,'winner',round_winner,'turn',case when round_winner is null then leader else null end,
+   'trick',case when round_winner is null then trick+1 else trick end);
+ end if;
+ update public.rooms set play=state,expires_at=now()+interval '30 minutes' where id=r.id;
+end $$;
+revoke all on function public.mazo_play_card(text,text,integer,integer) from public,anon;
+grant execute on function public.mazo_play_card(text,text,integer,integer) to authenticated;
 
 -- Ending a game deletes its room, players and hands together via cascading FKs.
 create or replace function public.mazo_score(room_code text,team_index integer,points_delta integer,score_limit integer,expected_version integer) returns void

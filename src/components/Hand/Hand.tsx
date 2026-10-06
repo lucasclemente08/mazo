@@ -8,18 +8,24 @@ interface HandProps {
   cards: CardType[];
   playerName: string;
   isCurrentUser?: boolean;
+  canPlay?: boolean;
+  busy?: boolean;
+  onPlay?: (card: CardType) => Promise<void>;
 }
 
 export const Hand: React.FC<HandProps> = ({
   cards,
   playerName,
   isCurrentUser = true,
+  canPlay = false, busy = false, onPlay,
 }) => {
   const [revealed, setRevealed] = useState(false);
+  const [choosing, setChoosing] = useState(false);
+  const [selected, setSelected] = useState<CardType | null>(null);
   const handKey = cards.map((card) => card.id).join(',');
-  useEffect(() => { setRevealed(false); }, [handKey]);
+  useEffect(() => { setRevealed(false); setChoosing(false); setSelected(null); }, [handKey, canPlay]);
   useEffect(() => {
-    const hide = () => setRevealed(false);
+    const hide = () => { setRevealed(false); setChoosing(false); setSelected(null); };
     window.addEventListener('blur', hide);
     document.addEventListener('visibilitychange', hide);
     return () => {
@@ -59,7 +65,7 @@ export const Hand: React.FC<HandProps> = ({
         {cards.length === 0 ? (
           <div className="h-44 flex flex-col items-center justify-center text-stone-400 border border-dashed border-stone-600/50 rounded-2xl w-full p-6 text-center">
             <CardsIcon className="w-9 h-9 mb-3 text-amber-200/60" />
-            <p className="text-sm">Esperando que el repartidor entregue las cartas...</p>
+            <p className="text-sm">{onPlay ? 'Ya tiraste tus cartas de esta mano.' : 'Esperando que el repartidor entregue las cartas...'}</p>
           </div>
         ) : (
           cards.map((card, idx) => (
@@ -72,14 +78,18 @@ export const Hand: React.FC<HandProps> = ({
                   : `rotate(${(idx - 1) * 2}deg)`,
               }}
             >
-              <Card card={card} faceDown={!revealed} />
+              {choosing ? <button type="button" disabled={busy} onClick={() => setSelected(card)}
+                aria-label={`Elegir ${card.value} de ${card.suit}`} aria-pressed={selected?.id === card.id}
+                className={`rounded-xl transition-transform hover:-translate-y-2 focus-visible:outline focus-visible:outline-amber-300 ${selected?.id === card.id ? 'ring-4 ring-amber-400 -translate-y-2' : ''}`}>
+                <Card card={card} />
+              </button> : <Card card={card} faceDown={!revealed} />}
             </div>
           ))
         )}
       </div>
 
       {/* Privacy Hold-to-Reveal trigger */}
-      {cards.length > 0 && isCurrentUser && (
+      {cards.length > 0 && isCurrentUser && !choosing && (
         <div className="w-full px-4 mt-2">
           <button
             type="button"
@@ -119,6 +129,16 @@ export const Hand: React.FC<HandProps> = ({
           </p>
         </div>
       )}
+      {cards.length > 0 && onPlay && canPlay && <div className="w-full px-4 mt-3 space-y-2">
+        {!choosing ? <button type="button" disabled={busy} onClick={() => { setChoosing(true); setRevealed(false); }}
+          className="w-full min-h-12 py-3 rounded-xl bg-amber-500 text-stone-950 font-bold hover:bg-amber-400">Ver y elegir carta</button>
+          : <><p className="text-center text-sm text-amber-100">Tocá una carta y confirmá para tirarla a la mesa.</p>
+            <div className="flex gap-2"><button type="button" disabled={busy} onClick={() => { setChoosing(false); setSelected(null); }}
+              className="flex-1 min-h-12 rounded-xl border border-stone-600 hover:bg-stone-800">Ocultar / cancelar</button>
+            <button type="button" disabled={!selected || busy} onClick={async () => {
+              if (selected) { const card = selected; setChoosing(false); setSelected(null); await onPlay(card); }
+            }} className="flex-1 min-h-12 rounded-xl bg-amber-500 text-stone-950 font-bold hover:bg-amber-400 disabled:opacity-40">{busy ? 'Tirando…' : 'Tirar carta'}</button></div></>}
+      </div>}
     </div>
   );
 };

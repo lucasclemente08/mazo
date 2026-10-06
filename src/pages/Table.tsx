@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GameService, getLocalSession, clearLocalSession } from '../services/gameService';
 import { Room, Player, Card as CardType } from '../types';
 import { WaitingPhrase } from '../components/WaitingPhrase';
+import { PlayingTable } from '../components/PlayingTable';
 import { Hand } from '../components/Hand/Hand';
 import { GuideIcon } from '../components/Icons';
 import { PlayerList } from '../components/PlayerList/PlayerList';
@@ -102,6 +103,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
 
   const handleNewRound = async () => {
     if (!canDeal || loadingAction) return;
+    if (room?.play && room.play.winner === null && !confirm('La mano sigue en juego. ¿Cerrarla y repartir otra? Usá esta opción si no quisieron el truco o se fueron al mazo.')) return;
     try {
       setActionError(null);
       setLoadingAction(true);
@@ -115,6 +117,14 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
     } finally {
       setLoadingAction(false);
     }
+  };
+
+  const handlePlay = async (card: CardType) => {
+    if (!room?.play || loadingAction) return;
+    setLoadingAction(true); setActionError(null);
+    try { await GameService.playCard(roomCode, card.id, room.roundNumber, room.play.version); }
+    catch (err) { setActionError(err instanceof Error ? err.message : 'No se pudo tirar la carta.'); }
+    finally { await refreshState(); setLoadingAction(false); }
   };
 
   const handleExit = async () => {
@@ -212,15 +222,19 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
           </div>
         )}
 
-        {(room.status === 'waiting' || loadingAction || (!canDeal && !matchEnded)) && <WaitingPhrase />}
+        {(room.status === 'waiting' || (room.play?.turn !== myPlayer.position && room.play?.winner === null && !matchEnded)) && <WaitingPhrase />}
         {room.maxPlayers === 3 && <p className="mb-3 text-center text-xs text-amber-200">Gallo: {players.find(p => p.position === room.dealerPosition)?.name || 'Esperando'} juega solo esta mano. Puntos individuales.</p>}
         {/* Hand View with Hold-to-Reveal */}
+        {room.status === 'playing' && <PlayingTable room={room} players={players} myId={myPlayer.id} />}
         <div className={`hand-transition w-full ${dealAnimation ? 'opacity-20 scale-95' : 'opacity-100 scale-100'}`}>
           <Hand
             key={room.roundNumber}
             cards={myHand}
             playerName={myPlayer.name}
             isCurrentUser={true}
+            canPlay={!matchEnded && room.play?.turn === myPlayer.position}
+            busy={loadingAction}
+            onPlay={room.status === 'playing' ? handlePlay : undefined}
           />
         </div>
       </main>
@@ -255,7 +269,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
               }`}
             >
               <RotateCcw className="w-5 h-5" />
-              <span>{canDeal ? 'NUEVA MANO' : 'ESPERANDO NUEVA MANO'}</span>
+              <span>{canDeal ? room.play && room.play.winner === null ? 'CERRAR MANO Y REPARTIR' : 'NUEVA MANO' : 'ESPERANDO NUEVA MANO'}</span>
             </button>
           )}
         </div>

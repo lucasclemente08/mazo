@@ -14,6 +14,67 @@ function load(relative, requireModule, context = {}) {
   return exports;
 }
 const deck = load('utils/deck.ts', () => { throw new Error('Unexpected import'); });
+const truco = load('utils/truco.ts', () => { throw new Error('Unexpected import'); });
+
+test('Truco ranking covers all 40 cards and resolves every parda combination', () => {
+  const cards = deck.createSpanishDeck();
+  assert.equal(truco.cardRank(cards.find(c => c.id === '1-espada')), 14);
+  assert.equal(truco.cardRank(cards.find(c => c.id === '1-basto')), 13);
+  assert.equal(truco.cardRank(cards.find(c => c.id === '7-espada')), 12);
+  assert.equal(truco.cardRank(cards.find(c => c.id === '7-oro')), 11);
+  for (const value of [3,2,12,11,10,6,5,4]) {
+    assert.equal(new Set(cards.filter(c => c.value === value).map(truco.cardRank)).size,1);
+  }
+  for (const [results, expected] of [
+    [[0,0],0], [[1,1],1], [[0,null],0], [[1,null],1], [[null,0],0], [[null,1],1],
+    [[null,null,0],0], [[null,null,1],1], [[null,null,null],1],
+    [[0,1,0],0], [[0,1,1],1], [[0,1,null],0], [[1,0,0],0], [[1,0,1],1], [[1,0,null],1],
+  ]) {
+    const room = { maxPlayers:2, dealerPosition:0 };
+    let state = truco.initialPlay(room);
+    for (const outcome of results) {
+      const cardsBySeat = outcome === null ? ['3-oro','3-copa'] : outcome === 0 ? ['3-oro','4-copa'] : ['4-oro','3-copa'];
+      for (let n=0;n<2;n++) {
+        const position = state.turn;
+        state = truco.advancePlay(room,state,{ card:cards.find(c=>c.id===cardsBySeat[position]), position, playerId:String(position), trick:state.trick });
+      }
+    }
+    assert.equal(state.winner,expected,JSON.stringify(results));
+    assert.equal(state.turn,null);
+  }
+});
+
+test('Local play blocks out-of-turn, foreign, stale and repeated cards; reset rotates mano', async () => {
+  const game=service();
+  const host=await game.GameService.createRoom('Host',2);
+  game.clearLocalSession();
+  const guest=await game.GameService.joinRoom(host.room.code,'Guest');
+  const session=p=>game.saveLocalSession({roomCode:host.room.code,playerId:p.id,playerName:p.name});
+  session(host.player); await game.GameService.dealCards(host.room.code);
+  let h=await game.GameService.getRoomState(host.room.code,host.player.id);
+  let g=await game.GameService.getRoomState(host.room.code,guest.player.id);
+  assert.equal(h.room.play.turn,1);
+  await assert.rejects(game.GameService.playCard(host.room.code,h.myHand[0].id,1,0),/turno/);
+  session(guest.player);
+  await assert.rejects(game.GameService.playCard(host.room.code,h.myHand[0].id,1,0),/disponible/);
+  const chosen=g.myHand[0].id;
+  await game.GameService.playCard(host.room.code,chosen,1,0);
+  g=await game.GameService.getRoomState(host.room.code,guest.player.id);
+  assert.equal(g.myHand.length,2); assert.equal(g.room.play.cards[0].card.id,chosen);
+  session(host.player);
+  await assert.rejects(game.GameService.playCard(host.room.code,h.myHand[0].id,1,0),/cambió/);
+  await game.GameService.playCard(host.room.code,h.myHand[0].id,1,1);
+  while ((h=await game.GameService.getRoomState(host.room.code,host.player.id)).room.play.turn !== null) {
+    const p=h.room.play.turn===0?host.player:guest.player; session(p);
+    const state=await game.GameService.getRoomState(host.room.code,p.id);
+    if (p.id===guest.player.id) await assert.rejects(game.GameService.playCard(host.room.code,chosen,1,state.room.play.version),/disponible/);
+    await game.GameService.playCard(host.room.code,state.myHand[0].id,1,state.room.play.version);
+  }
+  await assert.rejects(game.GameService.playCard(host.room.code,chosen,1,h.room.play.version),/terminó/);
+  session(host.player); await game.GameService.newRound(host.room.code,1);
+  h=await game.GameService.getRoomState(host.room.code,host.player.id);
+  assert.equal(h.room.play.mano,0); assert.equal(h.room.play.cards.length,0); assert.equal(h.myHand.length,3);
+});
 
 function service(remote = false, rpc = async () => { throw new Error('Backend unavailable'); }) {
   const store = new Map();
@@ -24,6 +85,7 @@ function service(remote = false, rpc = async () => { throw new Error('Backend un
   };
   return load('services/gameService.ts', (path) => {
     if (path.includes('deck')) return deck;
+    if (path.includes('truco')) return truco;
     if (path === './supabase') return { isSupabaseConfigured: remote };
     if (path === './remoteGame') return { gameRpc: rpc };
     throw new Error(`Unexpected import ${path}`);

@@ -59,7 +59,7 @@ export function TrucoGuide({ onClose }: { onClose: () => void }) {
           <p>La Falta Envido tiene variantes. Una forma habitual vale lo que le falta al equipo que va adelante para llegar a la meta. Otras distinguen malas y buenas: acuerden cuál usan y anoten el resultado manualmente.</p>
           <p className="mt-2">La Flor es opcional: tres cartas del mismo palo. Si juegan con Flor, se anuncia y reemplaza al Envido; una Flor sin rival vale 3 puntos. Acuerden también las subidas de Flor.</p>
         </section>
-        <p className="text-xs text-stone-400">En MAZO, los cantos y las bazas se juegan hablando. El anfitrión anota el resultado con + y corrige con −. Los puntos se conservan entre manos y se borran al cerrar la mesa.</p>
+        <p className="text-xs text-stone-400">En MAZO, la mesa controla los turnos y resuelve las bazas. Cuando te toca, usá «Ver y elegir carta», seleccioná una y confirmá «Tirar carta». Los cantos se hacen hablando; el anfitrión anota los puntos con + y corrige con −. Los puntos se conservan entre manos y se borran al cerrar la mesa.</p>
       </>}
       {section === 'truco' && <>
         <section><h3 className="text-lg text-amber-100 font-semibold mb-2">De mayor a menor</h3><p>El número impreso no determina la fuerza. Las cartas de una misma fila empatan entre sí.</p></section>

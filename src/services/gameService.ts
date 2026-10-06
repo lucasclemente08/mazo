@@ -2,6 +2,7 @@ import { Room, Player, Card } from '../types';
 import { createSpanishDeck, shuffleDeck, dealCards } from '../utils/deck';
 import { isSupabaseConfigured } from './supabase';
 import { gameRpc, type RemoteState } from './remoteGame';
+import { advancePlay, initialPlay } from '../utils/truco';
 
 interface StoredSession {
   roomCode: string;
@@ -75,6 +76,24 @@ function saveLocalState(roomCode: string, state: LocalRoomState) {
 }
 
 export class GameService {
+  static async playCard(roomCode: string, cardId: string, expectedRound: number, expectedVersion: number): Promise<void> {
+    if (isSupabaseConfigured) {
+      await gameRpc('mazo_play_card', { room_code: roomCode, card_id: cardId, expected_round: expectedRound, expected_version: expectedVersion });
+      return;
+    }
+    const local = getLocalState(roomCode);
+    const session = getLocalSession();
+    const actor = local?.players.find(p => p.id === session?.playerId);
+    if (!local || session?.roomCode !== roomCode || !actor) throw new Error('No pertenecés a la mesa.');
+    const play = local.room.play;
+    if (local.room.status !== 'playing' || !play || play.turn === null || local.room.scores?.some(s => s >= (local.room.scoreLimit ?? 30))) throw new Error('La mano terminó.');
+    if (expectedRound !== local.room.roundNumber || expectedVersion !== play.version) throw new Error('La jugada cambió. Actualizá la mesa.');
+    if (actor.position !== play.turn) throw new Error('Esperá tu turno.');
+    const card = local.hands[actor.id]?.find(c => c.id === cardId);
+    if (!card || play.cards.some(p => p.card.id === cardId)) throw new Error('Esa carta no está disponible en tu mano.');
+    local.room.play = advancePlay(local.room, play, { card, playerId: actor.id, position: actor.position, trick: play.trick });
+    saveLocalState(roomCode, local);
+  }
   static async updateScore(roomCode: string, team: 0 | 1 | 2, delta: number, expectedVersion: number, limit?: 15 | 30): Promise<void> {
     if (isSupabaseConfigured) {
       await gameRpc('mazo_score', { room_code: roomCode, team_index: team, points_delta: delta,
@@ -277,6 +296,7 @@ export class GameService {
     });
 
     local.room.status = 'playing';
+    local.room.play = initialPlay(local.room);
     local.hands = handsMap;
 
     saveLocalState(roomCode, local);
@@ -295,10 +315,12 @@ export class GameService {
     if (!local) throw new Error('Mesa no encontrada');
     this.validateDeal(local);
     if (local.room.status !== 'playing') throw new Error('Primero repartí la primera mano.');
+    if (expectedRound !== undefined && expectedRound !== local.room.roundNumber) throw new Error('La ronda cambió. Actualizá la mesa.');
 
     // Rotate dealer position
     local.room.dealerPosition = (local.room.dealerPosition + 1) % Math.max(1, local.players.length);
     local.room.roundNumber += 1;
+    local.room.play = initialPlay(local.room);
 
     // Deal fresh cards
     const deck = shuffleDeck(createSpanishDeck());
@@ -328,7 +350,7 @@ export class GameService {
     return {
       room: local.room,
       players: local.players,
-      myHand: local.hands[playerId] || [],
+      myHand: (local.hands[playerId] || []).filter(c => !local.room.play?.cards.some(p => p.card.id === c.id)),
     };
   }
 

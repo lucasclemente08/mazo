@@ -35,6 +35,14 @@ export interface Room {
   scoreLimit?: 15 | 30;
   scoreVersion?: number;
   createdAt?: string;
+  play?: PlayState;
+}
+
+export interface PlayedCard { card: Card; playerId: string; position: number; trick: number }
+export interface TrickResult { winner: number | null; leader: number }
+export interface PlayState {
+  version: number; mano: number; turn: number | null; trick: number;
+  cards: PlayedCard[]; results: TrickResult[]; winner: number | null;
 }
 
 export interface Hand {

@@ -110,6 +110,22 @@ dialog::backdrop { animation: backdrop-enter 220ms ease; }
   .action-primary:not(:disabled):hover { background: #f3d49a; }
   .action-secondary:not(:disabled):hover { background: #2a4936; border-color: #a1b69670; }
 }
+.playing-table { background: radial-gradient(ellipse at center, #34564090, #0e281ee0); box-shadow: inset 0 0 45px #03180d60, 0 8px 24px #03180d30; }
+.table-seat { background: #06201555; border: 1px solid #b4c5af18; }
+.table-seat-active { border-color: #e9c788a0; box-shadow: inset 0 0 20px #e9c7880c; }
+.playing-card.table-card, .table-card-slot { width: 68px; aspect-ratio: 5 / 8; }
+.playing-card.table-card .card-corner { font-size: 15px; }
+.playing-card.table-card .card-corner svg { width: 10px; height: 14px; }
+.playing-card.table-card .card-art { inset: 24px 11px; }
+.playing-card.table-card .card-pips svg { width: 11px; max-height: 17px; }
+.playing-card.table-card .card-pips-single svg { width: 26px; max-height: 38px; }
+.playing-card.table-card .card-art-court svg { width: 18px; height: 26px; }
+.playing-card.table-card .card-court-crown { font-size: 16px; }
+.playing-card.table-card .card-court-name { font-size: 7px; }
+.playing-card.table-card .card-suit-name { font-size: 5px; bottom: 7px; left: 6px; }
+.table-card-slot { border: 1px dashed #bccab044; border-radius: 10px; }
+.table-played-card { animation: card-to-table .25s ease-out both; }
+@keyframes card-to-table { from { opacity: 0; transform: translateY(18px) rotate(-5deg) scale(.93); } to { opacity: 1; transform: none; } }
 @keyframes view-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes score-enter { from { opacity: .5; transform: translateY(5px) scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes backdrop-enter { from { opacity: 0; } to { opacity: 1; } }

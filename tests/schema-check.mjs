@@ -106,5 +106,61 @@ assert.equal((await asUser(other,() => rpc('mazo_room_state',[three.room.code]))
 await asUser(host,() => rpc('mazo_score',[three.room.code,2,30,null,1]));
 await asUser(host,() => assert.rejects(rpc('mazo_deal',[three.room.code,true,2]),/terminó/));
 await asUser(host,() => rpc('mazo_leave_room',[three.room.code]));
-console.log('SQL checks passed, including three players, nine private cards, individual scores and gallo rotation.');
+// Deterministic hands exercise the real RPC, including same-side ties and Gallo.
+const users=[host,guest,other,'00000000-0000-4000-8000-000000000004','00000000-0000-4000-8000-000000000005','00000000-0000-4000-8000-000000000006'];
+for (const id of users.slice(3)) await db.query('insert into auth.users values($1)',[id]);
+const fixtures=[
+ {hands:[['3-oro','2-oro','4-oro'],['3-copa','2-copa','4-copa']],winner:1,leaders:[1,1,1]},
+ {hands:[['3-oro','4-oro','2-oro'],['4-copa','3-copa','2-copa']],winner:0,leaders:[0,1,1]},
+ {hands:[['3-oro','4-oro','2-oro'],['3-copa','5-copa','2-copa']],winner:1,leaders:[1,1]},
+ {hands:[['3-oro','2-oro','4-oro'],['4-copa','2-copa','3-copa']],winner:0,leaders:[0,0]},
+ {hands:[['1-espada','3-oro','4-oro'],['1-basto','2-oro','5-oro'],['7-espada','4-copa','6-oro']],winner:0,leaders:[0,0]},
+ {hands:[['4-oro','2-oro','6-oro'],['1-basto','1-espada','7-oro'],['7-espada','3-oro','5-oro']],winner:1,leaders:[1,1]},
+ {hands:[['4-oro','2-oro','6-oro'],['3-oro','1-basto','7-oro'],['5-oro','2-copa','6-copa'],['3-copa','1-espada','7-espada']],winner:1,leaders:[1,3]},
+ {hands:[['4-oro','2-oro','6-oro'],['3-oro','1-basto','7-oro'],['5-oro','2-copa','6-copa'],['3-copa','1-espada','7-espada'],['4-copa','2-basto','6-basto'],['5-copa','1-copa','7-copa']],winner:1,leaders:[1,3]},
+];
+for (const fixture of fixtures) {
+ const count=fixture.hands.length;
+ const {room}=await asUser(host,()=>rpc('mazo_create_room',['P0',count]));
+ for (let seat=1;seat<count;seat++) await asUser(users[seat],()=>rpc('mazo_join_room',[room.code,`P${seat}`]));
+ await asUser(host,()=>rpc('mazo_deal',[room.code,false,1]));
+ let state=await asUser(host,()=>rpc('mazo_room_state',[room.code]));
+ assert.equal(state.room.play.turn,1);
+ for (let seat=0;seat<count;seat++) {
+  const cards=fixture.hands[seat].map(id=>({id,value:Number(id.split('-')[0]),suit:id.split('-')[1]}));
+  await db.query('update public.hands set cards=$1::jsonb where room_id=$2 and player_id=$3',[JSON.stringify(cards),room.id,state.players[seat].id]);
+ }
+ await asUser(host,()=>assert.rejects(rpc('mazo_play_card',[room.code,fixture.hands[0][0],1,0]),/turno/));
+ await asUser(guest,()=>assert.rejects(rpc('mazo_play_card',[room.code,fixture.hands[0][0],1,0]),/disponible/));
+ await asUser(guest,()=>assert.rejects(rpc('mazo_play_card',[room.code,fixture.hands[1][0],2,0]),/cambió/));
+ for (let n=0;n<3*count;n++) {
+  state=await asUser(host,()=>rpc('mazo_room_state',[room.code]));
+  const play=state.room.play;
+  if (play.turn===null) break;
+  const seat=play.turn;
+  const cardId=fixture.hands[seat][play.trick];
+  if (play.trick>0) await asUser(users[seat],()=>assert.rejects(rpc('mazo_play_card',[room.code,fixture.hands[seat][0],1,play.version]),/disponible/));
+  await asUser(users[seat],()=>rpc('mazo_play_card',[room.code,cardId,1,play.version]));
+  await asUser(users[seat],()=>assert.rejects(rpc('mazo_play_card',[room.code,cardId,1,play.version]),/cambió|terminó/));
+  const own=await asUser(users[seat],()=>rpc('mazo_room_state',[room.code]));
+  assert.equal(own.myHand.length,2-play.trick);
+  assert.equal(own.myHand.some(c=>c.id===cardId),false);
+  assert.equal(own.room.play.cards.length,n+1);
+ }
+ state=await asUser(host,()=>rpc('mazo_room_state',[room.code]));
+ assert.equal(state.room.play.winner,fixture.winner);
+ assert.deepEqual(state.room.play.results.map(r=>r.leader),fixture.leaders);
+ assert.equal(state.room.play.turn,null);
+ await asUser(host,()=>assert.rejects(rpc('mazo_play_card',[room.code,fixture.hands[0][2],1,state.room.play.version]),/terminó/));
+ await asUser(host,()=>rpc('mazo_deal',[room.code,true,1]));
+ state=await asUser(host,()=>rpc('mazo_room_state',[room.code]));
+ assert.equal(state.room.play.mano,2%count); assert.equal(state.room.play.turn,2%count);
+ assert.equal(state.room.play.cards.length,0); assert.equal(state.myHand.length,3);
+ await asUser(host,()=>rpc('mazo_leave_room',[room.code]));
+}
+await db.exec('set role anon');
+await assert.rejects(rpc('mazo_play_card',['XXXX','1-espada',1,0]),/permission denied/);
+await db.exec('reset role');
+for (const table of ['rooms','players','hands']) assert.equal((await db.query(`select count(*)::int n from public.${table}`)).rows[0].n,0);
+console.log('SQL checks passed: private hands, turn enforcement, stale/repeated cards, pardas, team ties, Gallo, 2/3/4/6 seats, mano rotation and cleanup.');
 await db.close();

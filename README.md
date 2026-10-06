@@ -1,6 +1,6 @@
 # 🃏 MAZO
 
-Baraja virtual para jugar Truco presencialmente. La aplicación reparte; los jugadores llevan los turnos, cantos y puntajes.
+Baraja virtual para jugar Truco presencialmente o desde varios celulares. La aplicación reparte, controla los turnos y resuelve las bazas; los jugadores cantan y anotan los puntos.
 
 ## Desarrollo
 
@@ -27,10 +27,14 @@ Con Supabase configurado, los errores se muestran al usuario: no se cambia silen
 
 ## Juego
 
-- Mesas de 2, 4 o 6 jugadores; se reparten tres cartas cuando la mesa está completa.
+- Mesas de 2, 3, 4 o 6 jugadores; se reparten tres cartas cuando la mesa está completa. De a tres, el repartidor es gallo contra los otros dos y el marcador es individual.
 - Enlaces `/r/CÓDIGO` abren el formulario de ingreso. Una sesión válida restaura la mano al recargar.
 - Solo el anfitrión o repartidor puede comenzar o avanzar la ronda. El repartidor rota en cada nueva mano.
 - Las cartas se revelan mientras mantenés pulsado el botón (también con Espacio o Enter) y se ocultan al soltar o cambiar de pestaña.
+- Cuando te toca, «Ver y elegir carta» permite seleccionar y confirmar una carta para tirarla a la mesa compartida. Al cancelar, cambiar de pestaña o tirar, vuelve a ocultarse la mano privada.
+- Empieza el asiento siguiente al repartidor. Cada jugador tira una carta por turno; quien gana la baza abre la siguiente. Las cartas de igual jerarquía entre contrarios producen parda; las de compañeros ganan para su equipo. La primera parda conserva el jugador que salió, y las tres pardas favorecen al equipo mano.
+- Supabase valida turno, propiedad de la carta y versión de la jugada bajo bloqueo transaccional. Solo se publican cartas ya tiradas; las restantes se devuelven exclusivamente a su dueño. Las jugadas se borran al repartir otra mano o cerrar la mesa.
+- La mano termina cuando las bazas deciden el ganador. Los cantos y puntos siguen siendo manuales. «Cerrar mano y repartir» pide confirmación si aún no terminó, para resolver un «no quiero» o irse al mazo.
 - Compartir un nombre no permite recuperar la identidad de otra persona.
 - Anotador compartido de dos equipos con meta de 15 o 30 puntos. Los asientos alternados forman cada equipo; el anfitrión suma o corrige tantos. La versión del marcador impide sobrescribir una anotación reciente desde otra pestaña. Los puntos persisten entre manos, y se borran con la mesa.
 - Guía accesible desde el inicio y desde la mesa: reglas, cantos, puntos, jerarquía de Truco y valores de Envido con ejemplos. Los cantos se resuelven entre jugadores; el anotador no decide automáticamente Falta Envido ni Flor.
