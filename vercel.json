@@ -4,6 +4,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "trailingSlash": true,
+  "redirects": [
+    { "source": "/:path*", "has": [{ "type": "host", "value": "mazo-lemon.vercel.app" }], "destination": "https://trucardo.sytes.net/:path*", "permanent": true },
+    { "source": "/:path*", "has": [{ "type": "host", "value": "www.trucardo.sytes.net" }], "destination": "https://trucardo.sytes.net/:path*", "permanent": true },
+    { "source": "/index.html", "destination": "/", "permanent": true }
+  ],
   "headers": [
     { "source": "/r/:code/", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
     { "source": "/room.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },

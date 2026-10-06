@@ -1,7 +1,8 @@
 import { SITE_URL, homeMeta, pages, getPage } from './content';
 
 const escape = (value: string) => value.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
-const googleVerification = import.meta.env.VITE_GOOGLE_SITE_VERIFICATION?.trim() || '';
+// Public ownership token for Lucas's Search Console property; keep it deployed.
+const googleVerification = import.meta.env.VITE_GOOGLE_SITE_VERIFICATION?.trim() || 'rJ6Uac1UVydCR7ehGRh8c_M8ubz8sKnv0dJReg6A6YI';
 export function metadata(path: string) {
   const page = getPage(path);
   const indexable = path === '/' || !!page;
