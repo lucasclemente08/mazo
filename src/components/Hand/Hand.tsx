@@ -51,12 +51,12 @@ export const Hand: React.FC<HandProps> = ({
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
           <h2 className="text-lg font-bold text-amber-100 tracking-wide">
-            {playerName}
+            {onPlay ? 'Tus cartas' : playerName}
           </h2>
         </div>
         <div className="flex items-center gap-1.5 text-xs bg-black/40 px-3 py-1 rounded-full text-amber-200/80 border border-amber-500/20 backdrop-blur-sm">
           <Shield className="w-3.5 h-3.5 text-amber-400" />
-          <span>Mano privada</span>
+          <span>Solo vos las ves</span>
         </div>
       </div>
 

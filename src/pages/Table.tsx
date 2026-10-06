@@ -222,7 +222,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
           </div>
         )}
 
-        {(room.status === 'waiting' || (room.play?.turn !== myPlayer.position && room.play?.winner === null && !matchEnded)) && <WaitingPhrase />}
+        {room.status === 'waiting' && <WaitingPhrase />}
         {room.maxPlayers === 3 && <p className="mb-3 text-center text-xs text-amber-200">Gallo: {players.find(p => p.position === room.dealerPosition)?.name || 'Esperando'} juega solo esta mano. Puntos individuales.</p>}
         {/* Hand View with Hold-to-Reveal */}
         {room.status === 'playing' && <PlayingTable room={room} players={players} myId={myPlayer.id} />}
@@ -237,6 +237,7 @@ export const Table: React.FC<TableProps> = ({ roomCode, onLeave }) => {
             onPlay={room.status === 'playing' ? handlePlay : undefined}
           />
         </div>
+        {room.status === 'playing' && room.play?.turn !== myPlayer.position && room.play?.winner === null && !matchEnded && <div className="mt-4"><WaitingPhrase /></div>}
       </main>
 
       {/* Bottom Controls / Seating list */}
